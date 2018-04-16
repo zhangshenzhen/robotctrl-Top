@@ -17,6 +17,7 @@ public class ComBean {
 			{
 				bRec[i]=buffer[i];
 			}
+
 			SimpleDateFormat sDateFormat = new SimpleDateFormat("hh:mm:ss");     //时分秒
 			sRecTime = sDateFormat.format(new java.util.Date()); 
 		}

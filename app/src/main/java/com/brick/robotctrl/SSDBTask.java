@@ -35,13 +35,13 @@ public class SSDBTask extends TimerTask {
     // public String serverIp = "120.25.66.79";
     public String serverIp = "222.190.128.98";
     public int serverPort = 20177;
-    // public int serverPort = 8888;
-    // public String robotName = "seu";
-    public String robotName = "hs32";
+
+    public String robotName = "hs13";
     public String robotLocation = "江苏红石信息集成服务有限公司";
     public String videoPlayList = null;
     private final int serverSite = 222;
     private String serverSiteString = null;
+
 
     public void setRobotName(@NonNull String robotName) {
         if (!TextUtils.isEmpty(robotName))
@@ -97,7 +97,7 @@ public class SSDBTask extends TimerTask {
     }
 
     //保存命令列表 NOTE Queue用法
-    Queue<CmdEntry<Integer, String, String>> cmdList = new LinkedList<>();
+    Queue<CmdEntry<Integer, String, String>>  cmdList = new LinkedList<>();
 
     public SSDBTask(Context context, Handler handler) {
         assert context != null;
@@ -113,10 +113,11 @@ public class SSDBTask extends TimerTask {
         } catch (NumberFormatException e) {
             e.printStackTrace();
         }
+        //this 代表当前类，
         timer.schedule(this, 50, 50);
-        connect();
 
-//        pushFileList();
+        connect();
+//     pushFileList();
     }
 
     public void pushFileList() {
@@ -132,9 +133,9 @@ public class SSDBTask extends TimerTask {
                 for (int i = 0; i < files.length - 1; i++) {
                     if (
                             files[i].getAbsolutePath().endsWith(".avi") ||
-                                    files[i].getAbsolutePath().endsWith(".mp4") ||
-                                    files[i].getAbsolutePath().endsWith(".3gp") ||
-                                    files[i].getAbsolutePath().endsWith(".jpg")
+                            files[i].getAbsolutePath().endsWith(".mp4") ||
+                            files[i].getAbsolutePath().endsWith(".3gp") ||
+                            files[i].getAbsolutePath().endsWith(".jpg")
                         //  files[i].getAbsolutePath().endsWith(".flv")
                         // files[i].getAbsolutePath().endsWith(".gif")||
                         // files[i].getAbsolutePath().endsWith(".mkv")||
@@ -178,6 +179,7 @@ public class SSDBTask extends TimerTask {
         contextHandler.post(new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "run: stop 4: " + stop);
                 Toast.makeText(context, "Connecting to " + serverIp + ":" + serverPort, Toast.LENGTH_SHORT).show();
             }
         });
@@ -233,7 +235,7 @@ public class SSDBTask extends TimerTask {
     public static boolean enableSetVolume = false;
     // public static boolean enableEndVideo = false;
     public static boolean enableGetMessage = false;
-
+    public static boolean  enableSerial = false;
     private int iCount = 0;
 
     void sendMessageToMain(int Key_Type)     //ssdbtask对象从数据库取key_type所指定的键的值给mainactivity by gaowei                                               //
@@ -249,17 +251,23 @@ public class SSDBTask extends TimerTask {
             }
         } catch (Exception e) {
             e.printStackTrace();
-//            SSDBQuery(ACTION_CONNECT);
+ //           SSDBQuery(ACTION_CONNECT);
         }
     }
 
     @Override
     public synchronized void run() {
 //        Log.d(TAG, "run: stop:" + stop);
+  /*      try {
+            byte[] rlt = ssdbClient.hget(robotName, event[13]); // check event
+            Log.d(TAG, "----------SSDB-S------ Key:"+new String(rlt,"GBK"))
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
 
         if (stop) {
-            return;
-        }
+           return;
+         }
         while (cmdList.size() > 0) {
             CmdEntry<Integer, String, String> cmd = null;
             Log.d(TAG, "----------cmdList------- vaule"+cmdList.toString());
@@ -340,10 +348,10 @@ public class SSDBTask extends TimerTask {
                     } else {
 //                        SSDBQuery(ACTION_HSET, event[Key_BatteryVolt], "");
                     }
-                    if (enableNetworkDelay) {
+                     if (enableNetworkDelay) {
                         sendMessageToMain(Key_NetworkDelay);
                     } else {
-//                        SSDBQuery(ACTION_HSET, event[Key_NetworkDelay], "");
+//                      SSDBQuery(ACTION_HSET, event[Key_NetworkDelay], "");
                     }
                     if (enableLocation) {
                         sendMessageToMain(Key_Location);
@@ -369,9 +377,6 @@ public class SSDBTask extends TimerTask {
                                 message.obj = new String(rlt, "GBK");
                                 Log.d(TAG, "what :" + message.what + "----------SSDB-2------ Key:" + (String) message.obj);
                                 contextHandler.sendMessage(message);
-                              /*  if(rlt.equals("stop")||rlt.equals("headmid")) {
-                                    SSDBTask.enableDirCtl = false;
-                                }*/
 
                             }
                         } catch (Exception e) {
@@ -425,6 +430,7 @@ public class SSDBTask extends TimerTask {
                                 Log.d(TAG, "what :" + message.what + "----------SSDB-5------ Key:" + (String) message.obj);
                                 contextHandler.sendMessage(message);
                             }
+                                enableSetVolume = false;
                         } catch (Exception e) {
                             e.printStackTrace();
 //                            SSDBQuery(ACTION_CONNECT);
@@ -462,6 +468,7 @@ public class SSDBTask extends TimerTask {
     }
 
     public synchronized void SSDBQuery(int codeType, String key, String val) {
+      //  Log.d(TAG, "synchronized2: codeType :" + codeType -- +   " key :"+key +"-- val :"+val);
         cmdList.add(CmdEntry.create(codeType, key, val));
     }
 }

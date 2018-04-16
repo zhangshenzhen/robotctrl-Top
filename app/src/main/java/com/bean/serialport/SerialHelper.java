@@ -15,12 +15,14 @@ import java.security.InvalidParameterException;
  *串口辅助工具类
  */
 public abstract class  SerialHelper{
+	private static final String TAG ="SerialHelper.class";
 	private SerialPort mSerialPort;
 	private OutputStream mOutputStream;
 	private InputStream mInputStream;
 	private ReadThread mReadThread;
 	private SendThread mSendThread;
-	private String sPort="/dev/ttymxc0";
+	//private String sPort="/dev/ttymxc0";
+	private String sPort="/dev/ttyS3";
 	private int iBaudRate=9600;
 	private boolean _isOpen=false;
 	private byte[] _bLoopData=new byte[]{0x30};
@@ -31,7 +33,8 @@ public abstract class  SerialHelper{
 		this.iBaudRate=iBaudRate;
 	}
 	public SerialHelper(){
-		this("/dev/s3c2410_serial0",9600);
+		//this("/dev/s3c2410_serial0",9600);
+		this("/dev/s3c2410_serial3",9600);
 	}
 	public SerialHelper(String sPort){
 		this(sPort,9600);
@@ -44,8 +47,8 @@ public abstract class  SerialHelper{
 		mSerialPort =  new SerialPort(new File(sPort), iBaudRate, 0);
 		mOutputStream = mSerialPort.getOutputStream();
 		mInputStream = mSerialPort.getInputStream();
-		mReadThread = new ReadThread();
-		mReadThread.start();
+	/*	mReadThread = new ReadThread();  //暂时不用
+		mReadThread.start();*/
 		mSendThread = new SendThread();
 		mSendThread.setSuspendFlag();
 		mSendThread.start();
@@ -65,8 +68,8 @@ public abstract class  SerialHelper{
 	public void send(byte[] bOutArray){
 		try
 		{
-			//Log.d("sendPortData : ","send : "+bOutArray);
 			mOutputStream.write(bOutArray);
+			Log.d("mOutputStream : ","send : "+bOutArray);
 
 		} catch (IOException e)
 		{
@@ -88,6 +91,7 @@ public abstract class  SerialHelper{
 		send(bOutArray);		
 	}
 	//----------------------------------------------------
+	StringBuilder sb ;
 	private class ReadThread extends Thread {
 		@Override
 		public void run() {
@@ -96,25 +100,37 @@ public abstract class  SerialHelper{
 				try
 				{
 					Log.e("ReadThread","test");
-					if (mInputStream == null){ return;}
-					byte[] buffer=new byte[512];
-					int size = 0 ;
-					while ((mInputStream.read()!= -1)){
-					  size = mInputStream.read();
-					 Log.e("ReadThread","test2");
-					   }
+					if (mInputStream == null){
+						return;
+					}
+					byte[] buffer=new byte[256];
+					//int size = mInputStream.read(buffer);
+		//-----------------------------------------------
+					//判断拼接的字符串对象
+					if (sb == null){
+					  sb =new StringBuilder();
+					}
+					int size = mInputStream.read(buffer);
+                          sleep(100);
+					Log.d(TAG,"onDataReceived size. :  "+size);
+                    if(size<3){
+					  String Ser = new String(buffer,0,size);
+					  sb.append(Ser);
+					 }else {
+					  String Ser = new String(buffer,0,size);
+						sb.append(Ser);
+						Log.d(TAG, "onDataReceived ... :  " + sb.toString());
+						if (sb != null) {
+							sb = null;
+						}
+					}
+		//----------------------------------------------
 					if (size > 0){
-						Log.e("ReadThread","test3::"+size);
+						Log.e("ReadThread","test3   "+size);
 						ComBean ComRecData = new ComBean(sPort,buffer,size);
 						onDataReceived(ComRecData);
 					}
-					try
-					{
-						Thread.sleep(50);//延时50ms
-					} catch (InterruptedException e)
-					{
-						e.printStackTrace();
-					}
+
 				} catch (Throwable e)
 				{
 					e.printStackTrace();

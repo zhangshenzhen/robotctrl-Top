@@ -37,5 +37,7 @@ public class ActivityCollerctor {
             }
         }
     }
-
+    public static void finishA(Activity ac){
+       ac.finish();
+    }
 }

@@ -4,25 +4,12 @@
     android:layout_height="fill_parent"
     android:keepScreenOn="true"
     android:id="@+id/gifActivity"
-              >
-   <!-- android:background="#203040"-->
-   <!-- <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="android"
-        android:textColor="#fff"
-        android:textSize="36sp"
-        />-->
+      >
 
-   <!-- <ImageView
+
+     <com.ant.liao.GifView
         android:id="@+id/gif2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />-->
-    <com.ant.liao.GifView
-        android:id="@+id/gif2"
+        android:visibility="visible"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"

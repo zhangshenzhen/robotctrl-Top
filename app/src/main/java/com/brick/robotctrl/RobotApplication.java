@@ -2,11 +2,11 @@ package com.brick.robotctrl;
 
 import android.app.Application;
 import android.content.Context;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
-import com.kjn.crashlog.CrashHandler;
 import com.rg2.utils.LogUtil;
 
 import java.io.File;
@@ -42,10 +42,17 @@ public class RobotApplication extends Application {
           //  Intent stopIntent = new Intent(this, ZIMEAVDemoService.class);
           //   stopService(stopIntent);
               //启动错误捕获日志
-        CrashHandler crashHandler = CrashHandler.getInstance();
-        crashHandler.init(this);
+      /*  CrashHandler crashHandler = CrashHandler.getInstance();
+        crashHandler.init(this);*/
 
+        //获取最大音乐量值
+        AudioManager mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        int  current = mAudioManager.getStreamVolume( AudioManager.STREAM_MUSIC );
+        Log.e(TAG, "设置前媒体音量 ："+current);
 
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,7,0);
+        int  current2 = mAudioManager.getStreamVolume( AudioManager.STREAM_MUSIC );
+        Log.e(TAG, "当前媒体音量 ："+current2);
 
         //初始化发卡机
       // serialCtrlcard = new SerialCtrl(this, new Handler(), "ttyS3", 9600, "robotctrl");
@@ -62,7 +69,7 @@ public class RobotApplication extends Application {
 
         @Override//等发现了为捕获的异常的时候调用的方法；
         public void uncaughtException(Thread thread, Throwable ex) {
-            Log.e("MyexceptionHandler", "......程序发现了异常，被哥们捕获了");
+            Log.e("MyexceptionHandler", "......程序发现了异常，被哥们捕获了"+ex);
             StringBuffer sb = new StringBuffer();
             Date date = new Date();
             //格式化时间
@@ -87,16 +94,15 @@ public class RobotApplication extends Application {
             sb.append(sw.toString());//追加；
 
             try {
-                File file = new File(Environment.getExternalStorageDirectory(),"Robort_error.txt");
+                File file = new File(Environment.getExternalStorageDirectory(),"Robort_error"+time+".txt");
                 FileOutputStream fos = new FileOutputStream(file);
                 fos.write(sb.toString().getBytes());
                 fos.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-//        android.os.Process.killProcess(android.os.Process.myPid());
-//        Log.e("MyexceptionHandler", "......启动自杀方式，再次激活程序");
-
+       /* android.os.Process.killProcess(android.os.Process.myPid());
+        Log.e("MyexceptionHandler", "......启动自杀方式，再次激活程序");*/
         }
     }
 /*

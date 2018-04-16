@@ -5,7 +5,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.brick.robotctrl.R;
+import com.brick.robotctrl.*;
 import com.rg2.listener.MyOnClickListener;
 import com.rg2.utils.CityDialog;
 
@@ -15,7 +15,7 @@ import com.rg2.utils.CityDialog;
  * 邮箱：wangxianyun1@163.com
  * 描述：一句话简单描述
  */
-public class MainActivity extends BaseActivity
+public class MainActivity extends com.brick.robotctrl.BaseActivity
 {
 
     private TextView mUserNameTv;
@@ -23,10 +23,7 @@ public class MainActivity extends BaseActivity
     private TextView mAddressTv;
     private Button mSubmitBtn;
 
-    @Override
-    protected void updatePresentation() {
 
-    }
 
     @Override
     protected void initData()
@@ -42,8 +39,6 @@ public class MainActivity extends BaseActivity
         mIdNumberTv = (TextView) findViewById(R.id.tv_idNumber);
         mAddressTv = (TextView) findViewById(R.id.tv_address);
         mSubmitBtn = (Button) findViewById(R.id.btn_submit);
-
-
     }
 
     @Override

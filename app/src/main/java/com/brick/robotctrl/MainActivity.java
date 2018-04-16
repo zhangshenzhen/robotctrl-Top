@@ -14,7 +14,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.media.MediaRouter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -23,9 +22,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -34,28 +33,29 @@ import android.widget.Toast;
 import com.ant.liao.GifView;
 import com.jly.batteryView.BatteryView;
 import com.kjn.videoview.ADVideo;
-import com.presentation.MainPresentation;
 import com.rg2.activity.ShellUtils;
 import com.rg2.utils.LogUtil;
-import com.rg2.utils.StringUtils;
+import com.rg2.utils.WifiAdmin;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import it.sauronsoftware.base64.Base64;
-import zime.ui.ZIMEAVDemoService;
+
 ///*https://zhangshenzhen@bitbucket.org/pumpkine/robotctrl.git*/
 public class MainActivity extends com.brick.robotctrl.BaseActivity{
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "MainActivity.class";
     SharedPreferences.OnSharedPreferenceChangeListener presChangeListener = null;
 
-    SSDBTask   ssdbTask          = null;
+    public static  SSDBTask ssdbTask          = null;
     SerialCtrl serialCtrl        = null;
     SerialCtrl serialCtrlPrinter = null;
     Button IDButton;
@@ -66,9 +66,7 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
     private boolean serverChanged        = false;
     private boolean serialChanged        = false;
     private boolean robotLocationChanged = false;
-
     private String mp3Url = Environment.getExternalStorageDirectory().getPath() + "/Movies/qianqian.mp3";
-
     Calendar currentTime = null;
 
     ADVideo adVideo1 = null;
@@ -77,10 +75,14 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
 
     private IntentFilter          intentFilter;
     private netWorkChangeReceiver netWorkChangeReceiver;
+   // public NetworkConnectChangedReceiver mNetworkConnectChangedReceiver;
+   // public ETHERNETConnectChangedReceiver mETHERNETConnectChangedReceiver;
+    public boolean isConnected;
+    public boolean iseth0;
     private Button                printButton, mSettingBtn;
 
     private Dialog mNoticeDialog;
-    private Timer timer = new Timer(true);
+   // private Timer timer = new Timer(true);
     TimerTask mSettingTask = new TimerTask(){
         @Override
         public void run()
@@ -95,14 +97,29 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
 
     private ImageView mivglobal;
 
-private MainPresentation  mMainPresentation;
+
     private TextView mtvBback;
     private Button btnMoney;
     private Button btntest;
     private ProgressDialog pd;
     private GifView gif;
 
+    //无线网工具类
+    public WifiAdmin wifiAdmin;
+  //  private shellThread shellthread;
+  /*  private String[] shell = new String[]{
+            "ip ru flush",
+            "ip ru add to 192.168.100.0/24 lookup eth0" ,
+            "ip ru add to 10.0.0.0/8 lookup wlan0",
+            "ip ru add to 132.0.0.0/8 lookup wlan0",
+            "ip ru add to 172.0.0.0/8 lookup wlan0",
+            "ip ru add to 192.0.0.0/8 lookup wlan0",
+            "ip ru add to all lookup eth0"};*/
 
+
+    public WebView webView;
+    public Timer timer;
+    public int numstop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,48 +134,65 @@ private MainPresentation  mMainPresentation;
         // remove text in toolbar
        // toolbar.setTitle("");
        // setSupportActionBar(toolbar);
-
-        gif = (GifView) findViewById(R.id.gif);
-
+      gif = (GifView) findViewById(R.id.gif);
         gif.setGifImage(R.drawable.weixiao);
+
 
         ssdbTask = new SSDBTask(MainActivity.this, handler);  //ttymxc0
        // serialCtrl = new SerialCtrl(MainActivity.this, handler, "ttymxc0", 9600, "robotctrl");
+     //暂时屏蔽
         serialCtrl = new SerialCtrl(MainActivity.this, handler, "ttyS3", 9600, "robotctrl");
 
-         //打印机              ttyUSB1
-        serialCtrlPrinter = new SerialCtrl(MainActivity.this, handler, "ttyS1", 9600, "printer");
+         //打印机
+       // serialCtrlPrinter = new SerialCtrl(MainActivity.this, handler, "ttyUSB1", 9600, "printer");
         // serialCtrlPrinter.setSerialCOM("/dev/ttyUSB0");
+        netWorkChangeReceiver = new netWorkChangeReceiver();
         intentFilter = new IntentFilter();
         intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         //创建NetWorkChangeReceiver的实例，并调用registerReceiver()方法进行注册
-        netWorkChangeReceiver = new netWorkChangeReceiver();
         registerReceiver(netWorkChangeReceiver, intentFilter);
-        DispQueue = new DispQueueThread();      //获取电压显示线程
-       // DispQueue.start();  //暂时关闭此线程,
 
-          initData();
-          initChangeListener();
-//        PlayerService.startAction(this, mp3Url);
-//        relative timer
+          //无线网监听
+//        mNetworkConnectChangedReceiver = new NetworkConnectChangedReceiver();
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction("android.NET.conn.CONNECTIVITY_CHANGE");
+//        filter.addAction("android.Net.wifi.WIFI_STATE_CHANGED");
+//        filter.addAction("android.net.wifi.STATE_CHANGE");
+//        registerReceiver(mNetworkConnectChangedReceiver, filter);
 
-         Timer timer = new Timer(true);
+          //以太网监听
+//        mETHERNETConnectChangedReceiver = new ETHERNETConnectChangedReceiver();
+//        IntentFilter filter2 = new IntentFilter();
+//        filter2.addAction("android.NET.conn.CONNECTIVITY_CHANGE "); //网络连接消息
+//        filter2.addAction("android.net.ethernet.ETHERNET_STATE_CHANGED"); //以太网消息
+//        filter2.addAction("android.net.ethernet.STATE_CHANGE");
+//        this.registerReceiver(mETHERNETConnectChangedReceiver, filter2);
+
+        initData();
+       // initChangeListener();
+
+         timer = new Timer(true);
          //改指令执行后延时1000ms后执行run，之后每1000ms执行�?次run
          timer.schedule(queryTask, 200, 200);
         //   timer.cancel(); //结束Timer所有的计时器;
         initHandler();
-        AboutActivity about = new AboutActivity();
-        AboutActivity.MyThread tt = about.new MyThread(ssdbTask.robotName);
-        tt.start();
-        //被移动到SplashActivity界面中进行开启服务;
+     }
+    //初始化控件;
+     public void initData() {
+     //屏幕的点击事件
+     // gif.setOnClickListener(this);
+     }
 
-//         Intent startIntent = new Intent(MainActivity.this, ZIMEAVDemoService.class);
-//         startService(startIntent); // 启动服务
+    @Override
+    protected void initViews(Bundle savedInstanceState) { }
 
-                Log.d(TAG, "ZIMEService");
+    @Override
+    protected void initEvent() {}
 
-//        //ExpressionActivity.startAction(MainActivity.this, 12);
-    }
+    @Override
+    protected void initViewData() { }
+
+
     /*监听
     * */
      private void initChangeListener() {
@@ -176,6 +210,7 @@ private MainPresentation  mMainPresentation;
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
             {
+                Log.i(TAG, "onSharedPreferenceChanged: sharedPreferences ," + key + " " + sharedPreferences.getBoolean(key, false));
                 if (key.equals(controlType)){
                     boolean val = sharedPreferences.getBoolean(key, false);
                     Log.i(TAG, "onSharedPreferenceChanged: " + key + " " + val);
@@ -200,11 +235,11 @@ private MainPresentation  mMainPresentation;
                         serverChanged = true;
                     }
                     else if (key.equals(serialCom) && val != null) {
-                        // do some thing
+                          // do some thing
                         serialCtrl.setSerialCOM(val);
                         serialChanged = true;
                     }  else if (key.equals(serialBaud) && val != null){
-                        serialCtrl.setSerialBaud(val);
+                        serialCtrl.setSerialBaud(val);//暂时屏蔽
                         // do some thing
                         serialChanged = true;
                     }
@@ -218,98 +253,22 @@ private MainPresentation  mMainPresentation;
     //在oncreate方法中;
     private void initHandler() {
          ADActivity.setHandler(handler);
-        AboutActivity.setHandler(handler);
-    }
-
-    @Override
-    protected void updatePresentation() {
-            //得到当前route and its presentation display
-            MediaRouter.RouteInfo route = mMediaRouter.getSelectedRoute(
-                    MediaRouter.ROUTE_TYPE_LIVE_VIDEO);
-            Display presentationDisplay =  route  !=  null ? route.getPresentationDisplay() : null;
-            if (mMainPresentation != null && mMainPresentation.getDisplay() !=  presentationDisplay) {
-                mMainPresentation.dismiss();
-                mMainPresentation = null;
-            }
-            if (mMainPresentation == null &&  presentationDisplay != null) {
-                // Initialise a new Presentation for the Display
-                Log.d(TAG, "MainPresentation............main ..2");
-                mMainPresentation = new MainPresentation(this,  presentationDisplay);
-                //把当前的对象引用赋值给BaseActivity中的引用;
-                mPresentation  =  mMainPresentation  ;
-                // Log.d(TAG, "updatePresentation: this: "+ this.toString());
-                mMainPresentation.setOnDismissListener(mOnDismissListener);
-
-                // Try to show the presentation, this might fail if the display has
-                // gone away in the mean time
-                try {
-                    mMainPresentation.show();
-                } catch (WindowManager.InvalidDisplayException ex) {
-                    // Couldn't show presentation - display was already removed
-                    // Log.d(TAG, "updatePresentation: failed");
-                    mMainPresentation = null;
-                }
-            }
+       // AboutActivity.setHandler(handler);
+        //Presentation
+    // VideoPresentation.setHandler(handler);
     }
 
 
-
-
-
-    //初始化控件;
-    public void initData() {
-
-       /* mSettingBtn = (Button) findViewById(R.id.btn_setting);
-        printButton = (Button) findViewById(R.id.Printer);
-        IDButton = (Button) findViewById(R.id.IDButtonTest);
-        btnMoney = (Button) findViewById(R.id.btn_money);
-         btntest  =    (Button) findViewById(R.id.btn_test);
-        mtvBback = (TextView) findViewById(R.id.tv_back);
-          mSettingBtn.setOnClickListener(this);
-//        mbtnmenue.setOnClickListener(this);
-//        mquestion.setOnClickListener(this);
-         printButton.setOnClickListener(this);
-         btnMoney.setOnClickListener(this);
-         btntest.setOnClickListener(this);
-         IDButton.setOnClickListener(this);
-          mtvBback.setOnClickListener(this);*/
-          gif.setOnClickListener(this);
-
-    }
 
     //点击事件
     @Override
     public void onClick(View view) {
         LogUtil.e("MainActivity", "..System.currentTimeMillis()"+System.currentTimeMillis());
-       switch (view.getId()){
-           case R.id.gif:
+     /* switch (view.getId()){
+           case R.id.gif:*/
                Log.i(TAG, "onClick: 点击了界面");
-               //暂时不用，先屏蔽掉
-               startActivity(new Intent(MainActivity.this,FunctionSelectActivity.class));
-               break;
-
-
-            /*
-            case R.id.btn_setting:
-                startActivity(new Intent(MainActivity.this, FingerInputActivity.class));
-                break;
-            case R.id.IDButtonTest:
-                startActivity(new Intent(MainActivity.this, CardActivity.class));
-                LogUtil.e("MainActivity", ".........................23");
-                break;
-            case R.id.Printer:
-                startActivity(new Intent(MainActivity.this, PrintActivity.class));
-                break;
-            case R.id.btn_money:
-                startActivity(new Intent(MainActivity.this, FinancialMangerActivity.class));
-                break;
-            case R.id.tv_back:
-                finish();  //结束掉当前的 Activity, 返回到上一层;
-                break;
-            case R.id.btn_test:
-                startActivity(new Intent(MainActivity.this, MenuActivity.class));
-                break;*/
-        }
+       // startActivity(new Intent(MainActivity.this,PrintActivity.class));
+    //  }
     }
 
     private void initMCU(){
@@ -319,7 +278,7 @@ private MainPresentation  mMainPresentation;
         {
             public void run()
             {
-                Toast.makeText(getApplicationContext(), message, toastLength).show();
+              Toast.makeText(getApplicationContext(), message, toastLength).show();
             }
         });
     }
@@ -334,10 +293,10 @@ private MainPresentation  mMainPresentation;
         @Override
         public void run()
         {
-//            Log.d(TAG, "run: stop: " + ssdbTask.stop);
+            Log.d(TAG, "run: stop 1: " + ssdbTask.stop);
             if (!ssdbTask.stop)
             {                  // 发起读请�?
-                ssdbTask.SSDBQuery(SSDBTask.ACTION_HGET);////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!
+              ssdbTask.SSDBQuery(SSDBTask.ACTION_HGET);
             } else {
                 countForReconnectSSDB++;
                 if (countForReconnectSSDB % (1000 / 200) == 0)
@@ -347,12 +306,13 @@ private MainPresentation  mMainPresentation;
                     if (countForReconnectSSDB == 5 * 1000 / 200)
                     {
                         threadToUiToast("ssdb reconnecting...", Toast.LENGTH_SHORT);
+                        Log.d(TAG, "run: stop 3: " + ssdbTask.stop);
                         ssdbTask.connect();
                         countForReconnectSSDB = 0;
                     }
                 }
             }
-
+/*
             if (countForAlive++ > 5 * 1000 / 200)
             {//显示时间
                 currentTime = Calendar.getInstance();
@@ -372,24 +332,16 @@ private MainPresentation  mMainPresentation;
                 }
                 countForAlive = 0;
             }
+*/
 
-            ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);//获得运行activity
+  /*          ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);//获得运行activity
             ComponentName cn = am.getRunningTasks(1).get(0).topActivity;//得到某一活动
-            //            Log.d(TAG, "pkg:"+cn.getPackageName());
-            //            Log.d(TAG, "cls:"+cn.getClassName());
 
-            //            if ( cn.getClassName().equals("com.brick.robotctrl.MainActivity") ) {
-            //                countForPlayer++;
-            ////                Log.d(TAG, "run: countForPlayer:" + countForPlayer);
-            //                if ( countForPlayer == 30*1000/200 ) {
-            //                    PlayerService.startAction(MainActivity.this, mp3Url);
-            //                    countForPlayer = 0;
-            //                }
-            //            }
             if (cn.getClassName().equals("com.brick.robotctrl.ADActivity")) {
                 if (disableAudio.equals("No")){
                     disableAudio = "Yes";
                     ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DisableAudio], disableAudio);
+
                 }
              } else {
                 if (disableAudio.equals("Yes"))
@@ -398,7 +350,7 @@ private MainPresentation  mMainPresentation;
                     ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DisableAudio], disableAudio);
                 }
             }
-            addTimerCount();
+            addTimerCount();*/
         }
     };
 
@@ -437,13 +389,13 @@ private MainPresentation  mMainPresentation;
                         SSDBTask.enableDirCtl = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         Log.d(TAG, "handleMessage: clear Event");
-                        ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);//获得运行activity
+                      /*  ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);//获得运行activity
                         ComponentName an = am.getRunningTasks(1).get(0).topActivity;//得到某一活动
                         Log.d(TAG, "handleMessage: clear Event"+an.getClassName());
                         if (!an.getClassName().equals("com.brick.robotctrl.ExpressionActivity"))
                         {
-                          ExpressionActivity.startAction(MainActivity.this, 9 );
-                        }
+                     //     ExpressionActivity.startAction(MainActivity.this, 9 );
+                        }*/
                     }
                     if (rlt.equals("EndDirCtl")) {
                         Log.d(TAG, "handleMessage: ----------10-2------- Key:Event \tvalue:" + rlt);
@@ -478,6 +430,8 @@ private MainPresentation  mMainPresentation;
                         Log.d(TAG, "handleMessage: ----------10-6------- Key:Event \tvalue:" + rlt);
                         SSDBTask.enableSetVolume = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
+                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_SetVolume], "");
+
                     }
                     if (rlt.equals("EndVideo"))
                     {
@@ -549,20 +503,40 @@ private MainPresentation  mMainPresentation;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         Log.d(TAG, "handleMessage: clear Event");
                         Log.d(TAG, "restart: " + "重启机器人" );
+                         serialCtrl.sendPortData(serialCtrl.ComA,  "55AA7E0001021700970D");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         Intent iReboot = new Intent(Intent.ACTION_REBOOT);
                         iReboot.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainActivity.this.startActivity(iReboot);
+                        startActivity(iReboot);
+                    }
+                    if (rlt.equals("downLoad"))
+                    {
+                        Log.d(TAG, "handleMessage: ----------10-17-1------ Key:Event \tvalue:" + rlt);
+                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
+                      //  FtpDownLoad.downLoad("hs33/picture/","/mnt/sdcard/Pictures/");
+                        Log.d(TAG, "downLoad: " + "机器人开始下载。。。。" );
+                    }
+                    if (rlt.equals("downLoadMovies"))
+                    {
+                        Log.d(TAG, "handleMessage: ----------10-17-2------ Key:Event \tvalue:" + rlt);
+                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
+                      //   FtpDownLoad.downLoad("hs33/movie/","/mnt/sdcard/Movies/");
+                        Log.d(TAG, "downLoadMovies: " + "机器人开始下载。。。。" );
                     }
                     if (rlt.equals("shutdown"))
                     {
-                        Log.d(TAG, "handleMessage: ----------10-17------- Key:Event \tvalue:" + rlt);
+                        Log.d(TAG, "handleMessage: ----------10-18------- Key:Event \tvalue:" + rlt);
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         Log.d(TAG, "handleMessage: clear Event");
                         MainActivity.super.onShutdown();
                     }
                     if (rlt.equals("message"))
                     {
-                        Log.d(TAG, "handleMessage: ----------10-18------- Key:Event \tvalue:" + rlt);
+                        Log.d(TAG, "handleMessage: ----------10-19------- Key:Event \tvalue:" + rlt);
                         ssdbTask.enableGetMessage = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         Log.d(TAG, "handleMessage: clear Event");
@@ -606,9 +580,9 @@ private MainPresentation  mMainPresentation;
                                     Log.e("test111111111111", "");
                                     ADVideo.resume();
                                 }
-                                //                                else{
-                                //                                    ADVideo2.start();
-                                //                                }
+                                //                  else{
+                                //                     ADVideo.start();
+                                //                     }
                                 break;
                             case "Pause":
                                 ActivityManager em = (ActivityManager) getSystemService(ACTIVITY_SERVICE);//获得运行activity
@@ -627,7 +601,7 @@ private MainPresentation  mMainPresentation;
                                 if (bn.getClassName().equals("com.brick.robotctrl.ADActivity"))
                                 {
                                     ADVideo.stopPlayBack();
-                                    ExpressionActivity.startAction(MainActivity.this, 1);
+                                    ExpressionActivity.startAction(MainActivity.this, 9);
                                 }
                                 else if (bn.getClassName().equals("com.brick.robotctrl.ImageActivity"))
                                 {
@@ -640,11 +614,12 @@ private MainPresentation  mMainPresentation;
                                 if (!dn.getClassName().equals("com.brick.robotctrl.ADActivity") ||
                                         !dn.getClassName().equals("com.brick.robotctrl.ImageActivity"))
                                 {
+                                    Log.d(TAG, "handleMessage: ----------12-3--------Key:Single \tvalue:" +strArray[1] );
+
                                     if (strArray[1].endsWith(".jpg"))
                                     {
                                         ImageActivity.startAction(MainActivity.this, strArray[0], strArray[1]);
-                                    }
-                                    else
+                                    }else
                                     {
                                         ADActivity.startAction(MainActivity.this, strArray[0], strArray[1]);
                                     }
@@ -739,19 +714,23 @@ private MainPresentation  mMainPresentation;
                     }
                     else if (!rlt.equals("")){
                         Log.d(TAG, "handleMessage: ---------19-3--------Key:DirCtrl \tvalue:" + rlt);
-
                         serialCtrl.robotMove(rlt);
                          //修改的代码
-                      /*  if(rlt.equals("stop")||rlt.equals("headmid")) {
-                            SSDBTask.enableDirCtl = false;
-                        }*/
+                     if(rlt.equals("stop")||rlt.equals("headmid")) {
+                            numstop++;
+                         if(numstop >= 5){
+                 Log.d(TAG, "handleMessage: ---------numstop---------Key:SetParam \tvalue:numstop = " + numstop);
+                  ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
+                         numstop = 0;
+                         }
+                      }
                     }
-                    break;
+                     break;
                 case SSDBTask.Key_SetParam:
                     rlt = (String) msg.obj;
                     Log.d(TAG, "handleMessage: ---------20---------Key:SetParam \tvalue:" + rlt);
                     if (!rlt.equals("")) {
-                        serialCtrl.setRobotRate(rlt);
+                        serialCtrl.setRobotRate(rlt);//暂不需要
                         SSDBTask.enableSetParameter = false;
                     }
                     break;
@@ -773,6 +752,7 @@ private MainPresentation  mMainPresentation;
                     }
                     break;
                 case SSDBTask.Key_SetVolume:
+                    SSDBTask.enableSetVolume = false;
                     rlt = (String) msg.obj;
                     Log.d(TAG, "handleMessage: ---------22---------Key:SetVolume \tvalue:" + rlt);
                     if (!rlt.equals(""))
@@ -785,8 +765,8 @@ private MainPresentation  mMainPresentation;
                             volume = 0;
                         }
                         mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume / 5, 0);
-                        SSDBTask.enableSetVolume = false;
                     }
+                        SSDBTask.enableSetVolume = false;
                     break;
                 case SSDBTask.Key_Message:
                     rlt = (String) msg.obj;
@@ -796,41 +776,30 @@ private MainPresentation  mMainPresentation;
                     if (!rlt.equals(""))
                     {  //在这里测试其他的功能暂时注释掉，
                       //  SpeechService.startAction(MainActivity.this, Base64Decode(rlt));
-                       switch (rlt){
-                           case "a":
-                               print3();
-                               break;
-                           case "A" :
-                               print3();
-                               break;
-                           case "b":
-                               print3();
-                               break;
-                           case "B" :
-                               print3();
-                               break;
-                           case "c":
-                               print3();
-                               break;
-                           case "C" :
-                               print3();
-                               break;
-
+                       // 设置音量max大小为  15;
+                        //获取最大音乐量值
+                    SSDBTask.enableGetMessage = false;
+                     String path = Environment.getExternalStorageDirectory().getPath()+"/";
+                      if (rlt.length()>=3){
+                        Log.e(TAG, "文件路径length ："+rlt.length());
+                       String  filepath = path+rlt;
+                          File  mfile  = new File(filepath);
+                          if (mfile.exists()){
+                             Log.e(TAG, "文件路径 ："+filepath);
+                              mfile.delete();
+                           }
+                         return;
                        }
 
+                        int voice = Integer.parseInt(rlt);
 
-
-                        // 设置音量max大小为  15;
-                        //获取最大音乐量值
-                     /*   int voice = Integer.parseInt(rlt);
                            if(voice>=15){
                             voice =15;
                            }
-
                         AudioManager mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                         mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,voice,0);
                         int  current2 = mAudioManager.getStreamVolume( AudioManager.STREAM_MUSIC );
-                        Log.e(TAG, "当前媒体音量 ："+current2);*/
+                        Log.e(TAG, "当前媒体音量 ："+current2);
                         SSDBTask.enableGetMessage = false;
                     }
                     break;
@@ -901,46 +870,40 @@ private MainPresentation  mMainPresentation;
     protected void onResume() {
         super.onResume();
         setResult(Activity.RESULT_OK);//开启新的ActivityForResult();
-        LogUtil.e(TAG, "..System.currentTimeMillis()"+System.currentTimeMillis());
+        LogUtil.e(TAG, "生命------..System.currentTimeMillis()"+System.currentTimeMillis());
        // updatePresentation();//在父类中已经被调用了，
-        timer.cancel();//取消任务
+       // timer.cancel();//取消任务
     }
 
     @Override
     protected void onPause()
     {
         super.onPause();
-        timer.cancel(); //结束Timer所有的计时器;
-        if ( mMainPresentation!= null) {
-            mMainPresentation.dismiss();
-            mMainPresentation = null;
-        }
-        Log.i(TAG, "onPuase在这里停止掉");
+       // timer.cancel(); //结束Timer所有的计时器;
+
+        Log.i(TAG, "生命------onPuase在这里停止掉");
     }
 
     @Override
     protected  void onStart() {
 
-        Log.i(TAG, "onStart");
+        Log.i(TAG, "生命------onStart");
         super.onStart();
     }
 
         @Override
         protected void onStop() {
            super.onStop();
-            if ( mMainPresentation!= null) {
-                mMainPresentation.dismiss();
-                mMainPresentation = null;
-            }
-            Log.i(TAG, "onStop: MainActivity停止了么？");
+
+            Log.i(TAG, "生命------onStop: MainActivity停止了么？");
        }
 
     @Override
     protected void onRestart()
     {
-        Log.i(TAG, "onRestart");
+        Log.i(TAG, "生命------onRestart");
         countForPlayer = 0;
-        //        PlayerService.startAction(MainActivity.this, mp3Url);
+        //  PlayerService.startAction(MainActivity.this, mp3Url);
         super.onRestart();
     }
 
@@ -948,16 +911,15 @@ private MainPresentation  mMainPresentation;
     protected void onDestroy()
     {
         super.onDestroy();
-        Log.i(TAG, "onDestroy");
-        Intent stopZIMEServiceIntent = new Intent(this,ZIMEAVDemoService.class);
-        stopService(stopZIMEServiceIntent);
+        Log.i(TAG, "生命------onDestroy");
+
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(presChangeListener);
         ssdbTask.disConnect();
         serialCtrl.closeSerialCOM();
 
         unregisterReceiver(netWorkChangeReceiver);
-        Intent stopSpeechServiceIntent = new Intent(this, SpeechService.class);
-        stopService(stopSpeechServiceIntent);
+       /* Intent stopSpeechServiceIntent = new Intent(this, SpeechService.class);
+        stopService(stopSpeechServiceIntent);*/
         //穿网自启动相关的
        // CommandExecution.execCommand("busybox killall edge",true);
     }
@@ -987,7 +949,7 @@ private MainPresentation  mMainPresentation;
                             {
                                 public void run()
                                 {
-   //                          mBatteryView.setPower(batteryVoltVal);
+       //                         mBatteryView.setPower(batteryVoltVal);
                                 }
                             });
                         }
@@ -1009,15 +971,32 @@ private MainPresentation  mMainPresentation;
         @Override
         public void onReceive(Context context, Intent intent)
         {
+            if( !getIp2().isEmpty()){
+                 new Thread(){
+                     @Override
+                     public void run() {
+                         super.run();
+                         try {
+                  AudioManager mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                             for (int i = 0; i <3 ; i++) {
+                             sleep(2000);
+                       mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,7,0);
+                          }
+                   Log.e(TAG, getIp2()+":当前媒体音量 ："+mAudioManager.getStreamVolume( AudioManager.STREAM_MUSIC ));
+                   } catch (InterruptedException e) {
+                       e.printStackTrace();
+                    }
+                   }
+                 }.start();
+            }
             //通过getSystemService()方法得到connectionManager这个系统服务类，专门用于管理网络连接
             ConnectivityManager connectionManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo networkInfo = connectionManager.getActiveNetworkInfo();
             if ((networkInfo != null && networkInfo.isAvailable()) && ssdbTask.stop)
             {
                 Toast.makeText(context, "network is available, ssdb server haven't started, starting connect ssdb server", Toast.LENGTH_SHORT).show();
-         //     handler.sendEmptyMessage(ssdbConn);
-            }
-            else
+                // handler.sendEmptyMessage(ssdbConn);
+           } else
             {
                 Toast.makeText(context, "network is unavailable", Toast.LENGTH_SHORT).show();
             }
@@ -1032,7 +1011,6 @@ private MainPresentation  mMainPresentation;
         {
             try
             {
-
                 ApplicationInfo apkInfo = info.applicationInfo;
                 //   String appName = pm.getApplicationLabel(apkInfo).toString();
                 String packageName = apkInfo.packageName;   //得到安装包名�?
@@ -1099,53 +1077,164 @@ private MainPresentation  mMainPresentation;
         return null;
     }
 
-      // 客服叫号
-    private void print3()
-    {
-        //  String str ="1234567890ABCDEFGHIJ中华人民共和";
-        String time = StringUtils.getDateToString(new Date());
 
-        String str0 = "                                ";
-        String str1 = "                      2016-12-13";
-        String str2 = "                                ";
-        String str3 = "                                ";
-        String str4 = "               16号             ";
-        String str5 = "                                ";
-        String str6 = "                                ";
-        String str7 = "理财业务    柜台032             ";
-        String str8 = "                                ";
-        String str9 = "                                ";
-        sendPortText(str9);
-        sendPortText(str9);
-        sendPortText(str9);
-        sendPortText(str9);
-        sendPortText(str9);
-        sendPortText(str8);
-        sendPortText(str7);
-        sendPortText(str6);
-        sendPortText(str5);
-        sendPortText(str4);
-        sendPortText(str3);
-        sendPortText(str2);
-        sendPortText(str1);
-        sendPortText(str0);
-        sendPortText(str0);
-        sendPortText(str0);
-        sendPortText(str0);
-        sendPortText(str0);
+    /*无线网络的监听
+   * */
+  /*  class NetworkConnectChangedReceiver extends BroadcastReceiver{
+        public static final  String TAG1 = "TAG1";
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())){
+                Parcelable parcelableExtra = intent
+                        .getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                if (null != parcelableExtra)
+                {
+                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
+                    NetworkInfo.State state = networkInfo.getState();
+                    // 当然，这边可以更精确的确定状态
+                    isConnected = state == NetworkInfo.State.CONNECTED;
+                    Log.e(TAG1, "isConnected    " + isConnected);
+                    String ip = getIp2();
+                    if (isConnected && !ip.isEmpty()  )//无线连接 以太不为空
+                    {
+                       *//* mRunBtn.setEnabled(true);
+                        mRunBtn.setText("TRUE");*//*
+                        Log.e("TAG", "无线网 以太 可用。isConnected。。。");
+                        // APP.getInstance().setWifi(true);
+                        if (shellthread == null){
+                            shellthread = new shellThread();
+                            shellthread.start();
+                        }
+
+                        //注销广播
+                        context.unregisterReceiver(mNetworkConnectChangedReceiver);
+                    }
+                    else
+                    {
+                        // APP.getInstance().setWifi(false);
+                       *//* mRunBtn.setEnabled(false);
+                        mRunBtn.setText("false");*//*
+                    }
+                }
+            }
+        }
+    }*/
+    /*以太网监听
+   * */
+/*    private class ETHERNETConnectChangedReceiver extends BroadcastReceiver {
+        private final String  TAG = "以太网";
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            iseth0 = isETHERNET(context);
+            String ip = getIp2();
+            Log.e("TAG1以太网 ip。isConnected。。。", " "+ip);
+            Log.e("TAG1", "isConnected   此时以太网  " + iseth0);
+            Log.e("TAG1", "isConnected   此时无线为 " +isConnected );
+            if(isConnected && !ip.isEmpty()  ){
+               *//* mRunBtn.setEnabled(true);
+                mRunBtn.setText("TRUE");*//*
+                Log.e("TAG1", "以太网 无线 可用。isConnected。。。");
+
+                if (shellthread == null){
+                    shellthread = new shellThread();
+                    shellthread.start();
+                }
+
+               // unregisterReceiver(mETHERNETConnectChangedReceiver);
+            }else {
+              *//*  mRunBtn.setEnabled(false);
+                mRunBtn.setText("false");*//*
+                Log.e("TAG1", "以太网 或无线 不可用。isConnected。。。");
+            }
+
+           *//*-------------------------------------------*//*
+            ConnectivityManager connectivityManager = (ConnectivityManager) context
+                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
+
+            Log.e("以太网 无线 可用。isConnected。。。", " "+ip);
+            if (activeNetInfo != null ){
+                int type = activeNetInfo.getType();
+                Log.e("以太网 无线 可用。isConnected。。。", " "+type);
+            }
+        }
+
+    }*/
+
+    /*判断wifi 是否连接
+    * */
+
+    private  static boolean isWifi(Context mContext)
+    {
+        ConnectivityManager connectivityManager = (ConnectivityManager) mContext
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
+        if (activeNetInfo != null
+                && activeNetInfo.getType() == ConnectivityManager.TYPE_WIFI)
+        {
+            return true;
+        }
+        return false;
     }
-
-    private void sendPortText(String content)
+    /*判断以太网 是否连接
+      * */
+    private  static boolean isETHERNET(Context mContext)
     {
-        byte[] temp = null;
-        try
+        ConnectivityManager connectivityManager = (ConnectivityManager) mContext
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
+        if (activeNetInfo != null
+                && activeNetInfo.getType() == ConnectivityManager.TYPE_ETHERNET)
         {
-            temp = content.getBytes("gbk");
-        } catch (UnsupportedEncodingException e)
-        {
+            return true;
+        }
+        return false;
+    }
+    /*获取以太网的ip
+    * */
+    public String getIp2() {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                NetworkInterface intf = en.nextElement();
+                if (intf.getName().toLowerCase().equals("eth0") ) {
+                    for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                        InetAddress inetAddress = enumIpAddr.nextElement();
+                        if (!inetAddress.isLoopbackAddress()) {
+                            String   ipaddress = inetAddress.getHostAddress().toString();
+                            if (!ipaddress.contains("::")) {//ipV6的地址
+                                return ipaddress;
+                            }
+                        }
+                    }
+                } else {
+                    continue;
+                }
+            }
+        } catch (SocketException e) {
             e.printStackTrace();
         }
-        serialCtrlPrinter.sendPortText(serialCtrlPrinter.ComA, temp);
+        return "";
     }
+
+/*    public class shellThread extends Thread {
+        @Override
+        public void run() {
+            ShellUtil.CommandResult r= ShellUtil.execCommand(shell,true,true);
+
+            if(null !=r)
+            {
+                Log.e("TAG", "11111----->" + r.errorMsg);
+                Log.e("TAG", "22222----->" + r.responseMsg);
+                Log.e("TAG", "333333----->" + r.result);
+                if (shellthread != null){
+                    // shellthread.stop();
+                    Log.e("TAG", "222222222222222222222222222222.."+shellthread);
+                }
+            } else
+            {
+                Log.e("TAG", "222222222222222222222222222222");
+            }
+        }
+    }*/
 
 }

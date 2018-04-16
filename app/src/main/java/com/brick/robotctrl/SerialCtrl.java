@@ -90,20 +90,20 @@ public class SerialCtrl {
     private class SerialControl extends SerialHelper {
         public SerialControl(){
         }
-
         @Override
         protected void onDataReceived(final ComBean ComRecData)
         {
             // receive data
             ComRecDatatmp = ComRecData;
+            Log.d("onDataReceived", "ComRecData:   " + ComRecData);
             if(TAGElse.equals("robotctrl")) {
-                try {
-                    if (Integer.parseInt(String.format("%02x", ComRecDatatmp.bRec[1]).toUpperCase(), 16) == 16) {
+                try {                                                                               // ==16
+                    if (Integer.parseInt(String.format("%02x", ComRecDatatmp.bRec[1]).toUpperCase(), 16) ==16) {
                         RmShake[loop++] = Integer.parseInt(String.format("%02x", ComRecDatatmp.bRec[2]).toUpperCase(), 16);
                         if (loop == 7) {
                             batteryNum = GetMid(RmShake, 7);                  //更新电池值
                             loop = 0;
-//                        Log.d("onDataReceived", "getbattery: " + batteryNum);
+                        Log.d("onDataReceived", "getbattery: " + batteryNum);
                         }     ;
                     }
                     Log.d(TAG, "onDataReceived: success" + TAGElse);
@@ -190,28 +190,38 @@ public class SerialCtrl {
         });
     }
 
+      public  SerialCtrl serialCtrl2;
 // relative robot
     public void robotMove(String dir) {
         Log.d(TAG, "robotMove: "+dir);
+       /* if (serialCtrl2 ==null){
+            serialCtrl2 = new SerialCtrl(context, new Handler(), "ttyS1", 9600, "robotctrl");
+        }*/
         switch (dir) {
             case "up":
                // sendPortData(ComA, "FF01FF01");
-                sendPortData(ComA, "55AA7E0001020100810D");
-
+                sendPortData(ComA, "55AA7E0001020100810D");//暂时改1号串口
+               // serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001020100810D");
                 break;
             case "down":
                 // sendPortData(ComA, "FF02FF02");
                 sendPortData(ComA, "55AA7E0001020200820D");
+                //暂时改1号串口
+               // serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001020200820D");
 
                 break;
             case "left":
                // sendPortData(ComA, "FF03FF03");
                sendPortData(ComA, "55AA7E0001020300830D");
+                //暂时改1号串口
+               // serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001020300830D");
 
                 break;
             case "right":
                // sendPortData(ComA, "FF04FF04");
                 sendPortData(ComA, "55AA7E0001020400840D");
+                //暂时改1号串口
+              //  serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001020400840D");
 
                 break;
             case "stop":
@@ -219,11 +229,16 @@ public class SerialCtrl {
                 sendPortData(ComA, "55AA7E0001020500850D");
                 //headmid 代码
                 sendPortData(ComA, "55AA7E0001021500950D");
+              //暂时改1号串口
+              //  serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001020500850D");
+              //  serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001021500950D");
+
                 break;
             case "headup":
               //  sendPortData(ComA, "FF11FF11");
               //  sendPortData(ComA, "55AA7E0004020100840D");//发卡机开始
                 sendPortData(ComA, "55AA7E0001021100910D");
+
                 break;
             case "headdown":
               //  sendPortData(ComA, "FF12FF12");
@@ -236,6 +251,7 @@ public class SerialCtrl {
               // sendPortData(ComA, "FF13FF13");
               //  sendPortData(ComA, "55AA7E0004020400870D");//发卡机准备
                sendPortData(ComA, "55AA7E0001021300930D");
+
                 break;
             case "headright":
                // sendPortData(ComA, "FF14FF14");
@@ -246,7 +262,7 @@ public class SerialCtrl {
             case "headmid":
                 //sendPortData(ComA, "FF15FF15");
                // sendPortData(ComA, "55AA7E0001021500950D");
-                sendPortData(ComA, "55AA7E0001021500960D");
+                sendPortData(ComA, "55AA7E0001021600960D");
                 break;
 
             default:
@@ -256,7 +272,7 @@ public class SerialCtrl {
     {
       //  sendPortData(ComA, "FF10FF10");;55AA7E0004020600890D
       //  sendPortData(ComA, "55AA7E0001021000900D");
-          sendPortData(ComA, "55AA7E0001021000900D");
+      //    sendPortData(ComA, "55AA7E0001021000900D");
         return batteryNum;
     }
 
@@ -304,5 +320,17 @@ public class SerialCtrl {
         sendPortData(ComA, "FF08" +Integer.toHexString(headRateBCC)+"0D");
         Log.d(TAG, "setRobotRate: " + "FF08" + Integer.toHexString(headRate) +Integer.toHexString(headRateBCC)+"0D");
 //      sendPortData(ComA, "FF16"+splitRate[3]+String.valueOf(timeoutTimeBCC));
+
+/*        if (serialCtrl2 ==null){
+            serialCtrl2 = new SerialCtrl(context, new Handler(), "ttyS1", 9600, "robotctrl");
+        }
+        serialCtrl2.sendPortData(serialCtrl2.ComA, "FF06"  + Integer.toHexString(exeRateBCC)+"0B");
+        //Log.d(TAG, "setRobotRate: " +Integer.toHexString(exeRate));
+        Log.d(TAG, "setRobotRate: " + "FF06" +Integer.toHexString(exeRate) + Integer.toHexString(exeRateBCC));
+        serialCtrl2.sendPortData(serialCtrl2.ComA, "FF07" +Integer.toHexString(turnRateBCC)+"0C");
+        Log.d(TAG, "setRobotRate: " + "FF07" +Integer.toHexString(turnRate) +Integer.toHexString(turnRateBCC));
+        serialCtrl2.sendPortData(serialCtrl2.ComA, "FF08" +Integer.toHexString(headRateBCC)+"0D");
+        Log.d(TAG, "setRobotRate: " + "FF08" + Integer.toHexString(headRate) +Integer.toHexString(headRateBCC)+"0D");
+//      sendPortData(ComA, "FF16"+splitRate[3]+String.valueOf(timeoutTimeBCC));*/
     }
 }

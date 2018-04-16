@@ -24,7 +24,7 @@ public class ADVideo {
     public static String path;
 
     public ADVideo (VideoView videoView, Handler handler){
-        this.videoView = videoView;
+        this.videoView = videoView;//videoView控件赋值给ADVideo 中的静态成员变量使用
         this.contextHandler = handler;
     }
 
@@ -41,9 +41,10 @@ public class ADVideo {
                     getFiles(files[i].getAbsolutePath());
                 } else {
                     if (
-                        files[i].getAbsolutePath().endsWith(".avi")||
                         files[i].getAbsolutePath().endsWith(".mp4")||
-                        files[i].getAbsolutePath().endsWith(".3gp")
+                        files[i].getAbsolutePath().endsWith(".avi")||
+                        files[i].getAbsolutePath().endsWith(".3gp")||
+                        files[i].getAbsolutePath().endsWith(".sqv")
  //                       files[i].getAbsolutePath().endsWith(".flv")||
 //                        files[i].getAbsolutePath().endsWith(".gif")||
 //                        files[i].getAbsolutePath().endsWith(".mkv")||
@@ -91,8 +92,9 @@ public class ADVideo {
     public void playSingleCycleWhat(String str)
     {
         index=findIndexOfStringInvideoList(str);
+       // index = 2;
+        Log.d(TAG, "index: "+index+" : play: starting play: " + videoList.get(index));
         videoView.setVideoPath(videoList.get(index));             //获得第一个video的路径
-        Log.d(TAG, "play: starting play: " + videoList.get(index));
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
@@ -104,30 +106,32 @@ public class ADVideo {
         videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {  //监听视频播放块结束时，做next操作
             @Override
             public void onCompletion(MediaPlayer mp) {//这是一个匿名类，对该父类mediaplayer.oncompletionlistener中的oncompletion进行了重写
-                videoView.setVideoPath(videoList.get(index));
                 Log.d(TAG, "over play: starting play: " + videoList.get(index));
+                videoView.setVideoPath(videoList.get(index));
                 videoView.start();
             }
         });
     }
     public void playSingleWhat(String str) {
-        index=findIndexOfStringInvideoList(str);
-        videoView.setVideoPath(videoList.get(index));             //获得第一个video的路径
-        Log.d(TAG, "play: starting play: " + videoList.get(index));
-        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                videoView.start();                                   //开始播放
-                contextHandler.sendEmptyMessage(PROGRESS);
-                Log.d(TAG, "onPrepared: PROGRESS");
-            }
-        });
+
+            index=findIndexOfStringInvideoList(str);
+            videoView.setVideoPath(videoList.get(index));             //获得第一个video的路径
+            Log.d(TAG, "play: starting play: " + videoList.get(index));
+            videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    videoView.start();                                   //开始播放
+                    contextHandler.sendEmptyMessage(PROGRESS);
+                    Log.d(TAG, "onPrepared: PROGRESS");
+                }
+            });
+
         videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {  //监听视频播放块结束时，做next操作
             @Override
             public void onCompletion(MediaPlayer mp) {//这是一个匿名类，对该父类mediaplayer.oncompletionlistener中的oncompletion进行了重写
                 stopPlayBack();
                 Message message = new Message();
-                message.what = singleOver;
+                message.what = singleOver;//使用Handler 传递机制，
                 message.obj = "nihao";
                 contextHandler.sendMessage(message);
             }
@@ -167,7 +171,7 @@ public class ADVideo {
         per = videoView.getCurrentPosition();
     }
     public static void resume(){
-        //videoView.seekTo(per);
+       // videoView.seekTo(per);
         videoView.resume();
         videoView.start();
 
@@ -175,6 +179,7 @@ public class ADVideo {
 
     public static void stopPlayBack(){
         videoView.stopPlayback();
+
     }
     public void start(){
         videoView.seekTo(per);

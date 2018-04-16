@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.media.AudioManager;
-import android.media.MediaRouter;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -16,19 +15,17 @@ import android.view.Display;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.VideoView;
 
 import com.kjn.videoview.ADVideo;
-import com.presentation.VideoPresentation;
 
 
 public class ADActivity extends BaseActivity {
     private final String TAG = "ADActivity";
-
+   public static Context Adthis;
     private VideoView videoView;
     ADVideo adVideo = null;
-    private String videoPath;
+    private   String videoPath;
     private boolean flag = true;
     private boolean isOver = false;
     public static String fileName = null;
@@ -47,17 +44,17 @@ public class ADActivity extends BaseActivity {
 //    private View mVolumeBrightnessLayout;
     /**副屏
      * */
-    private VideoPresentation mVideoPresentation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         getWindow().setFormat(PixelFormat.TRANSLUCENT);
         super.onCreate(savedInstanceState);
+        Adthis = this;//在副屏中使用当前Activity的this
         setContentView(R.layout.activity_ad);
          Intent intent = getIntent();
         fileName = intent.getStringExtra("fileName");
-        Log.d(TAG, "onCreate: filename" + fileName);
         mode = intent.getStringExtra("mode");
-
+        Log.d(TAG, "onCreate: filename : " + fileName +" mode : "+mode);
         // videoview 实现
         videoView = (VideoView) findViewById(R.id.videoView);
         videoView.setZOrderOnTop(true);
@@ -65,51 +62,62 @@ public class ADActivity extends BaseActivity {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         mGestureDetector = new GestureDetector(this, new MyGestureListener());
-
+       // videoView.setVisibility(View.GONE);
 //        videoView.setOnTouchListener(this);
 //        videoView.setMediaController(new MediaController(this));  //不需要注释掉即可
-        adVideo = new ADVideo(videoView, handler);
+
+    adVideo = new ADVideo(videoView, handler);
         switch (mode){
             case "SingleCycle":
-                Log.d(TAG, "onCreate: filename 主" + fileName);
                 videoPlayTargetCycle();
                 break;
             case "ContinuePlay":
                 videoPlay();
                 break;
             case "Single":
+                Log.d(TAG, "onCreate: filename 主" + fileName);
                 videoPlayTargetSingle();
-
                 break;
             case "Cycle":
                 videoCycleFrom(fileName);
                 break;
         }
-//        View decorView = getWindow().getDecorView();
-////        Hide both the navigation bar and the status bar.
-////        SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
-////        a general rule, you should design your app to hide the status bar whenever you
-////        hide the navigation bar.
-//        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-//                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE;
-//        decorView.setSystemUiVisibility(uiOptions);
+
     }
 
+    @Override
+    protected void initData() {
 
+    }
 
-    Handler handler = new Handler() {
+    @Override
+    protected void initViews(Bundle savedInstanceState) {
+
+    }
+
+    @Override
+    protected void initEvent() {
+
+    }
+
+    @Override
+    protected void initViewData() {
+
+    }
+
+  Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
                 case singleOver:
                     String percentString = "100%";
-                    Log.d(TAG, "进度: " + percentString);
-                    Message message = new Message();
+                    Log.d(TAG, "进度singleOver: " + percentString);
+                 /*  Message message = new Message();
                     message.what = videoInfo;
                     message.obj = percentString;
-                    contextHandler2.sendMessage(message);
-                    ExpressionActivity.startAction(ADActivity.this, 1);
+                    contextHandler2.sendMessage(message);*/
+                    ExpressionActivity.startAction(ADActivity.this, 11);
                     break;
                 case PROGRESS:
                     int currentPosition,duration;
@@ -117,15 +125,14 @@ public class ADActivity extends BaseActivity {
                     duration = videoView.getDuration();
                     int percent = ((currentPosition * 100) / duration);
                     String percentprocessString = String.valueOf(percent)  + "%";
-                    Log.d(TAG, "进度: " + percentprocessString);
-                    Message message1 = new Message();
+                    Log.d(TAG, "进度PROGRESS: " + percentprocessString);
+                  /* Message message1 = new Message();
                     message1.what = videoInfo;
                     message1.obj = fileName+" "+percentprocessString;
-                    contextHandler2.sendMessage(message1);
+                    contextHandler2.sendMessage(message1);*/
                     if(videoView.isPlaying()){
                         handler.sendEmptyMessageDelayed(PROGRESS,1000);
-                    }
-
+                  }
             }
         }
     };
@@ -239,74 +246,57 @@ public class ADActivity extends BaseActivity {
     }
 
     @Override
+    protected void onStart() {
+        Log.i(TAG, "生命------onStart");
+        super.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "生命------onResume");
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i(TAG, "生命------onPause");
+         finish();
+    }
+
+    @Override
     protected void onStop() {
-        Log.i(TAG, "onStop");
+        Log.i(TAG, "生命------Stop");
         super.onStop();
-        if(mVideoPresentation !=null){
-            mVideoPresentation.dismiss();
-            mVideoPresentation = null;
-        }
-        finish();
+         finish();
     }
 
     @Override
     protected void onRestart() {
-        Log.i(TAG, "onRestart");
+        Log.i(TAG, "生命------onRestart");
         View decorView = getWindow().getDecorView();
 //        Hide both the navigation bar and the status bar.
 //        SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
 //        a general rule, you should design your app to hide the status bar whenever you
 //        hide the navigation bar.
-        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+      /*  int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE;
-        decorView.setSystemUiVisibility(uiOptions);
+        decorView.setSystemUiVisibility(uiOptions);*/
         super.onRestart();
     }
 
     @Override
     protected void onDestroy() {
-        Log.i(TAG, "onDestroy");
+        Log.i(TAG, "生命------onDestroy");
         super.onDestroy();
     }
 
 
-    @Override
-    protected void updatePresentation() {
-        //得到当前route and its presentation display
-        MediaRouter.RouteInfo route = mMediaRouter.getSelectedRoute(
-                MediaRouter.ROUTE_TYPE_LIVE_VIDEO);
-        Display presentationDisplay =  route  !=  null ? route.getPresentationDisplay() : null;
-        if (mVideoPresentation != null && mVideoPresentation.getDisplay() !=  presentationDisplay) {
-            mVideoPresentation.dismiss();
-            mVideoPresentation = null;
-        }
-        if (mVideoPresentation == null &&  presentationDisplay != null) {
-            // Initialise a new Presentation for the Display
-            Log.d(TAG, "MainPresentation............main ..2");
-            mVideoPresentation = new VideoPresentation(this,  presentationDisplay);
-            //把当前的对象引用赋值给BaseActivity中的引用;
-            mPresentation  =  mVideoPresentation  ;
-            // Log.d(TAG, "updatePresentation: this: "+ this.toString());
-            mVideoPresentation.setOnDismissListener(mOnDismissListener);
 
-            // Try to show the presentation, this might fail if the display has
-            // gone away in the mean time
-            try {
-                mVideoPresentation.show();
-                Log.d(TAG, "onCreate: filename 副" + fileName);
-                mVideoPresentation.initViewVideoData(true , fileName);
-            } catch (WindowManager.InvalidDisplayException ex) {
-                // Couldn't show presentation - display was already removed
-                // Log.d(TAG, "updatePresentation: failed");
-                mVideoPresentation = null;
-            }
-        }
-    }
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mGestureDetector.onTouchEvent(event))
             return true;
-
         // 处理手势结束
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_UP:
@@ -384,6 +374,7 @@ public class ADActivity extends BaseActivity {
         startIntent.putExtra("fileName", str);
         context.startActivity(startIntent);
     }
+
     public static void setHandler(Handler handler){
         ADActivity.contextHandler2 = handler;
     }
