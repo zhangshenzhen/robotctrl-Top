@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-
     package="com.brick.robotctrl">
 
     <!-- android:sharedUserId="android.uid.system" -->
     /*android:installLocation="preferExternal"*//*安装路径为Sd卡*/
     <uses-feature android:name="android.hardware.usb.host" />/*声音的权限*/<!-- 开机启动 -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.SET_DEBUG_APP" />
-    <!-- 允许一个程序打开窗口使用 显示在其他所有程序的顶层 --> /*自动适配屏屏幕分辨率的功能 */<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />/*自动适配屏屏幕分辨率的功能 */<uses-permission android:name="android.permission.SET_DEBUG_APP" />
+    <!-- 允许一个程序打开窗口使用 显示在其他所有程序的顶层 -->
+ /*自动适配屏屏幕分辨率的功能 */
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -114,13 +114,15 @@
             android:screenOrientation="landscape"
             android:theme="@style/AppTheme.FullScreen.NoTitle" />
         -->
-     <!--   <activity
+        <!--
+            <activity
             android:name="zime.ui.ZIMEAVDemoActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:multiprocess="true"
-            android:screenOrientation="landscape" />-->
+            android:screenOrientation="landscape" />
+        -->
         <!--
             <activity
             android:name=".ShowSureQueryActivity"
@@ -147,7 +149,7 @@
 
         <!-- 设置密码 -->
 
-        <service android:name="zime.ui.ZIMEAVDemoService" />
+
 
         <meta-data
             android:name="com.google.android.gms.version"
@@ -161,7 +163,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </receiver>
-
 
     </application>
 

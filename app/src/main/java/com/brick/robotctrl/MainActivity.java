@@ -50,6 +50,8 @@ import java.util.TimerTask;
 
 import it.sauronsoftware.base64.Base64;
 
+import static com.brick.robotctrl.SSDBTask.ACTION_HSET;
+
 ///*https://zhangshenzhen@bitbucket.org/pumpkine/robotctrl.git*/
 public class MainActivity extends com.brick.robotctrl.BaseActivity{
     private static final String TAG = "MainActivity.class";
@@ -135,14 +137,13 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
        // toolbar.setTitle("");
        // setSupportActionBar(toolbar);
       gif = (GifView) findViewById(R.id.gif);
-        gif.setGifImage(R.drawable.weixiao);
+      gif.setGifImage(R.drawable.weixiao);
 
 
         ssdbTask = new SSDBTask(MainActivity.this, handler);  //ttymxc0
        // serialCtrl = new SerialCtrl(MainActivity.this, handler, "ttymxc0", 9600, "robotctrl");
      //暂时屏蔽
         serialCtrl = new SerialCtrl(MainActivity.this, handler, "ttyS3", 9600, "robotctrl");
-
          //打印机
        // serialCtrlPrinter = new SerialCtrl(MainActivity.this, handler, "ttyUSB1", 9600, "printer");
         // serialCtrlPrinter.setSerialCOM("/dev/ttyUSB0");
@@ -171,9 +172,9 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
         initData();
        // initChangeListener();
 
-         timer = new Timer(true);
+       timer = new Timer(true);
          //改指令执行后延时1000ms后执行run，之后每1000ms执行�?次run
-         timer.schedule(queryTask, 200, 200);
+        timer.schedule(queryTask, 200, 200);
         //   timer.cancel(); //结束Timer所有的计时器;
         initHandler();
      }
@@ -430,7 +431,7 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                         Log.d(TAG, "handleMessage: ----------10-6------- Key:Event \tvalue:" + rlt);
                         SSDBTask.enableSetVolume = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
-                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_SetVolume], "");
+                       // ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_SetVolume], "");
 
                     }
                     if (rlt.equals("EndVideo"))
@@ -467,6 +468,20 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                         Log.d(TAG, "handleMessage: ----------10-11------- Key:Event \tvalue:" + rlt);
                         SSDBTask.enableBatteryVolt = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
+                        //自定义数据发送电量到pc端;
+                        int finalVolt = serialCtrl.getBattery();
+                        float  volt  =  finalVolt*0.01f;
+                        for (int i = 0; i < 3; i++) {
+                            try {
+                                ssdbTask.SSDBQuery(ACTION_HSET, "BatteryVolt", ""+volt);
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        Log.d(TAG, "handleMessage: --------10-11-------voltf : " + volt);
+
+                        Log.d(TAG, "handleMessage: clear Event");
                         Log.d(TAG, "handleMessage: clear Event");
                     }
                     if (rlt.equals("NetworkDelay"))
@@ -718,9 +733,9 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                          //修改的代码
                      if(rlt.equals("stop")||rlt.equals("headmid")) {
                             numstop++;
-                         if(numstop >= 5){
-                 Log.d(TAG, "handleMessage: ---------numstop---------Key:SetParam \tvalue:numstop = " + numstop);
-                  ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
+                      if(numstop >= 5){
+                      Log.d(TAG, "handleMessage: ---------numstop---------Key:SetParam \tvalue:numstop = " + numstop);
+                      ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
                          numstop = 0;
                          }
                       }
@@ -757,16 +772,20 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                     Log.d(TAG, "handleMessage: ---------22---------Key:SetVolume \tvalue:" + rlt);
                     if (!rlt.equals(""))
                     {
-                        int volume = Integer.parseInt(rlt);
-                        if (volume > 100){
-                            volume = 100;
-                      }
-                        else if (volume < 0){
-                            volume = 0;
+                        int voice = Integer.parseInt(rlt);
+
+                        if(voice>=15){
+                            voice =15;
+                        }else if (voice <1){
+                            return;
                         }
-                        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume / 5, 0);
+
+                        AudioManager mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,voice,0);
+                        int  current2 = mAudioManager.getStreamVolume( AudioManager.STREAM_MUSIC );
+                        Log.e(TAG, "当前媒体音量 ："+current2);
                     }
-                        SSDBTask.enableSetVolume = false;
+                    SSDBTask.enableSetVolume = false;
                     break;
                 case SSDBTask.Key_Message:
                     rlt = (String) msg.obj;
@@ -873,6 +892,8 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
         LogUtil.e(TAG, "生命------..System.currentTimeMillis()"+System.currentTimeMillis());
        // updatePresentation();//在父类中已经被调用了，
        // timer.cancel();//取消任务
+        //定义一个Alarm机制
+
     }
 
     @Override

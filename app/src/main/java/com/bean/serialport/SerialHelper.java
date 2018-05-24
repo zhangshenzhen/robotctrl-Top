@@ -47,11 +47,11 @@ public abstract class  SerialHelper{
 		mSerialPort =  new SerialPort(new File(sPort), iBaudRate, 0);
 		mOutputStream = mSerialPort.getOutputStream();
 		mInputStream = mSerialPort.getInputStream();
-	/*	mReadThread = new ReadThread();  //暂时不用
-		mReadThread.start();*/
-		mSendThread = new SendThread();
+		mReadThread = new ReadThread();  //暂时不用
+		mReadThread.start();
+	/*	mSendThread = new SendThread();  //暂时不用
 		mSendThread.setSuspendFlag();
-		mSendThread.start();
+		mSendThread.start();*/
 		_isOpen=true;
 	}
 	//----------------------------------------------------
@@ -79,7 +79,7 @@ public abstract class  SerialHelper{
 	//----------------------------------------------------
 	public void sendHex(String sHex){
 		byte[] bOutArray = SerialFunc.HexToByteArr(sHex);
-		//Log.d("sendPortData : ","bOutArray : "+bOutArray);
+		Log.d("sendPortData : ","bOutArray : "+bOutArray);
 		send(bOutArray);		
 	}
 	public void sendTxt(byte[] bOutArray){
@@ -120,15 +120,19 @@ public abstract class  SerialHelper{
 					  String Ser = new String(buffer,0,size);
 						sb.append(Ser);
 						Log.d(TAG, "onDataReceived ... :  " + sb.toString());
-						if (sb != null) {
-							sb = null;
+						getBettryVoltReceived(sb.toString());
+
+						if(sb.length()> size){
+							Log.d(TAG,"onDataReceived  .. :  "+sb.toString());
+							sb.delete(0,sb.length()+1);//拼接的字符串清除了 不用置为null， 避免重复创建
+							Log.d(TAG,"onDataReceived  sb剩余 .. :  "+sb.toString());
 						}
 					}
 		//----------------------------------------------
 					if (size > 0){
 						Log.e("ReadThread","test3   "+size);
-						ComBean ComRecData = new ComBean(sPort,buffer,size);
-						onDataReceived(ComRecData);
+						/*ComBean ComRecData = new ComBean(sPort,buffer,size);
+						onDataReceived(ComRecData);*/
 					}
 
 				} catch (Throwable e)
@@ -141,7 +145,7 @@ public abstract class  SerialHelper{
 	}
 //----------------------------------------------------
 	private class SendThread extends Thread{
-		public boolean suspendFlag = true;// 控制线程的执行
+		public boolean suspendFlag = true; // 控制线程的执行
 		@Override
 		public void run() {
 			super.run();
@@ -269,4 +273,5 @@ public abstract class  SerialHelper{
 	}
 	//----------------------------------------------------
 	protected abstract void onDataReceived(ComBean ComRecData);
+	protected abstract void getBettryVoltReceived(String batteryvolt);
 }

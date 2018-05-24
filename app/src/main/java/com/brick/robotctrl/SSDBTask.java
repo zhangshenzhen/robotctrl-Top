@@ -28,7 +28,6 @@ public class SSDBTask extends TimerTask {
     public static final int ACTION_HSET = 0x0004;
     public static final int ACTION_HGET = 0x0008;
 
-
     private Handler contextHandler = null;
     private Context context = null;
     private SSDB ssdbClient = null;
@@ -36,7 +35,7 @@ public class SSDBTask extends TimerTask {
     public String serverIp = "222.190.128.98";
     public int serverPort = 20177;
 
-    public String robotName = "hs13";
+    public String robotName = "hs11";
     public String robotLocation = "江苏红石信息集成服务有限公司";
     public String videoPlayList = null;
     private final int serverSite = 222;
@@ -217,7 +216,7 @@ public class SSDBTask extends TimerTask {
 
     public static final String[] event = new String[]{
             "event", "DirCtl", "param", "VideoPlay", "VideoInfo", "VideoPlayList", "RobotMsg", "BatteryVolt", "NetworkDelay", "Location",
-            "Brow", "CurrentTime", "DisableAudio", "Volume", "EndVideo", "", "Message"};
+            "Brow", "CurrentTime", "DisableAudio", "SetVolume", "EndVideo", "", "Message"};
     ////////////////////////gaowei/////////////////////////////
     public static boolean enableForbidAudio = false;
     public static boolean enableCurrentTime = false;
@@ -264,6 +263,7 @@ public class SSDBTask extends TimerTask {
         } catch (Exception e) {
             e.printStackTrace();
         }*/
+        Log.d(TAG, "----------SSDB-run------ Key:"+cmdList.size());
 
         if (stop) {
            return;
