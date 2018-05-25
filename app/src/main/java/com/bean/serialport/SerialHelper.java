@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.cedric.serialport.SerialPort;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,7 +92,8 @@ public abstract class  SerialHelper{
 		send(bOutArray);		
 	}
 	//----------------------------------------------------
-	StringBuilder sb ;
+	public StringBuilder sb ;
+	public ByteArrayOutputStream byteArrayOutputStream;
 	private class ReadThread extends Thread {
 		@Override
 		public void run() {
@@ -99,13 +101,11 @@ public abstract class  SerialHelper{
 			while(!isInterrupted()) {
 				try
 				{
-					Log.e("ReadThread","test");
+					Log.i(TAG,"ReadThread test");
+					byte[] buffer=new byte[256];
 					if (mInputStream == null){
 						return;
 					}
-					byte[] buffer=new byte[256];
-					//int size = mInputStream.read(buffer);
-		//-----------------------------------------------
 					//判断拼接的字符串对象
 					if (sb == null){
 					  sb =new StringBuilder();
@@ -113,28 +113,31 @@ public abstract class  SerialHelper{
 					int size = mInputStream.read(buffer);
                           sleep(100);
 					Log.d(TAG,"onDataReceived size. :  "+size);
-                    if(size<3){
-					  String Ser = new String(buffer,0,size);
-					  sb.append(Ser);
-					 }else {
-					  String Ser = new String(buffer,0,size);
-						sb.append(Ser);
-						Log.d(TAG, "onDataReceived ... :  " + sb.toString());
-						getBettryVoltReceived(sb.toString());
+					//字节数组输出流
+					if(byteArrayOutputStream ==null) {
+						byteArrayOutputStream = new ByteArrayOutputStream();
+						Log.d(TAG,"onDataReceived . :........  ");
+					}
 
-						if(sb.length()> size){
-							Log.d(TAG,"onDataReceived  .. :  "+sb.toString());
-							sb.delete(0,sb.length()+1);//拼接的字符串清除了 不用置为null， 避免重复创建
-							Log.d(TAG,"onDataReceived  sb剩余 .. :  "+sb.toString());
+					byteArrayOutputStream.reset();//重新计数;
+					byteArrayOutputStream.write(buffer,0,size);
+					String Serial = SerialFunc.ByteArrToHex(byteArrayOutputStream.toByteArray());
+					Log.d(TAG,"onDataReceived .Serial 1:" + Serial + " 长度 "+Serial.length());
+
+					if(size<2){
+						sb.append(Serial);
+						Log.d(TAG,"onDataReceived .Serial 2:" + sb + " 长度 "+sb.length());
+					}else {
+						byteArrayOutputStream.close();
+						sb.append(Serial);
+						Log.d(TAG,"onDataReceived .Serial 3:" + sb + " 长度 "+sb.length());
+						String[] voltArr = sb.toString().split(" ");
+						getBettryVoltReceived(voltArr);
+						if (sb.length()>0){
+							sb.delete(0, sb.length() + 1);//拼接的字符串清除了 不用置为null， 避免重复创建
+							Log.d(TAG, "onDataReceived  sb剩余 .4. :  " + sb);
 						}
 					}
-		//----------------------------------------------
-					if (size > 0){
-						Log.e("ReadThread","test3   "+size);
-						/*ComBean ComRecData = new ComBean(sPort,buffer,size);
-						onDataReceived(ComRecData);*/
-					}
-
 				} catch (Throwable e)
 				{
 					e.printStackTrace();
@@ -273,5 +276,5 @@ public abstract class  SerialHelper{
 	}
 	//----------------------------------------------------
 	protected abstract void onDataReceived(ComBean ComRecData);
-	protected abstract void getBettryVoltReceived(String batteryvolt);
+	protected abstract void getBettryVoltReceived(String[] batteryvolt);
 }

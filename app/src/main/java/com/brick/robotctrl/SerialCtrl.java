@@ -116,31 +116,30 @@ public class SerialCtrl {
         }
 
         @Override
-        protected void getBettryVoltReceived(String battery) {
-            Log.d(TAG, "ReceiveBattery battery  : "+ battery);//BB30CC00
-            if (battery.length()!=8){
+        protected void getBettryVoltReceived(String[] battery) {
+            for(int i = 0 ;i<battery.length;i++){
+                Log.d(TAG, battery.length+"onDataReceived  字符串.3. : " + battery[i]);
+            }//BB30CC00
+            if (battery.length!=4){
                 //防止读取到的数据长度有误导致程序崩溃;
                 return;
             }
-            //电压
-            String volt =battery.substring(0,4);
-            if (volt.substring(0,2).equals("CC")){//根据标志位 获取电压值
-                String finalVolt = volt.substring(2);
+
+            String volt =battery[0];  //电压标志位
+            if(volt.equals("CC")){
+                String finalVolt = battery[1];//电压值
                 batteryNum = Integer.parseInt(finalVolt,16);
-                Log.d(TAG, "ReceiveBattery volt  : "+ batteryNum);
+                Log.d(TAG, "onDataReceived 电压百分比: "+batteryNum);
             }else {
                 return;
             }
             //充电状态
-            String state = battery.substring(4);
-            if(state.substring(0,2).equals("DD")){
-                Log.d(TAG, "ReceiveBattery state  : "+ state.substring(2));
+            String state = battery[3];
+            if(state.equals("DD")){
+                Log.d(TAG, "ReceiveBattery state  : "+ battery[4]);
             }else {
                 return;
             }
-
-            long  dec= Long.parseLong(battery,16) ;//把十六进制转为十进制
-            // Log.d(TAG, "ReceiveBattery hex  : "+ hex);
         }
 
         public int GetMid( int r[], int n) {      //冒泡排序,取中间值，去除最大值和最小值
