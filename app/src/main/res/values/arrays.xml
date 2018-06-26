@@ -1,5 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!--通过FrameAnimation播放的图片-->
+    <array name="duzui0">
+        <item>@drawable/duzui1</item>
+        <item>@drawable/duzui2</item>
+        <item>@drawable/duzui3</item>
+        <item>@drawable/duzui4</item>
+        <item>@drawable/duzui5</item>
+        <item>@drawable/duzui6</item>
+        <item>@drawable/duzui7</item>
+        <item>@drawable/duzui8</item>
+    </array>
+    <array name="duzui">
+        <item>@drawable/duzui1</item>
+        <item>@drawable/duzui2</item>
+        <item>@drawable/duzui3</item>
+        <item>@drawable/duzui4</item>
+        <item>@drawable/duzui5</item>
+        <item>@drawable/duzui6</item>
+        <item>@drawable/duzui7</item>
+        <item>@drawable/duzui8</item>
+    </array>
+
+    <array name="superise">
+        <item>@drawable/superise1</item>
+        <item>@drawable/superise2</item>
+        <item>@drawable/superise3</item>
+        <item>@drawable/superise4</item>
+        <item>@drawable/superise5</item>
+        <item>@drawable/superise6</item>
+    </array>
+    <array name="huachi">
+        <item>@drawable/huachi1</item>
+        <item>@drawable/huachi2</item>
+        <item>@drawable/huachi3</item>
+        <item>@drawable/huachi4</item>
+        <item>@drawable/huachi5</item>
+        <item>@drawable/huachi6</item>
+        <item>@drawable/huachi7</item>
+    </array>
+
+    <array name="kelian">
+        <item>@drawable/kelian1</item>
+        <item>@drawable/kelian2</item>
+        <item>@drawable/kelian3</item>
+        <item>@drawable/kelian4</item>
+        <item>@drawable/kelian5</item>
+    </array>
+    <array name="keai">
+        <item>@drawable/keai1</item>
+        <item>@drawable/keai2</item>
+        <item>@drawable/keai3</item>
+        <item>@drawable/keai4</item>
+        <item>@drawable/keai5</item>
+        <item>@drawable/keai6</item>
+    </array>
+    <array name="cry">
+        <item>@drawable/cry1</item>
+        <item>@drawable/cry2</item>
+        <item>@drawable/cry3</item>
+        <item>@drawable/cry4</item>
+        <item>@drawable/cry5</item>
+    </array>
+    <array name="tiaoqi">
+        <item>@drawable/tiaopi1</item>
+        <item>@drawable/tiaopi2</item>
+        <item>@drawable/tiaopi3</item>
+        <item>@drawable/tiaopi4</item>
+        <item>@drawable/tiaopi5</item>
+        <item>@drawable/tiaopi6</item>
+    </array>
+    <array name="weiqu">
+        <item>@drawable/weiqu1</item>
+        <item>@drawable/weiqu2</item>
+        <item>@drawable/weiqu3</item>
+        <item>@drawable/weiqu4</item>
+        <item>@drawable/weiqu5</item>
+        <item>@drawable/weiqu6</item>
+        <item>@drawable/weiqu7</item>
+    </array>
+    <array name="weixiao">
+        <item>@drawable/weixiao1</item>
+        <item>@drawable/weixiao2</item>
+        <item>@drawable/weixiao3</item>
+        <item>@drawable/weixiao4</item>
+        <item>@drawable/weixiao5</item>
+        <item>@drawable/weixiao6</item>
+        <item>@drawable/weixiao7</item>
+        <item>@drawable/weixiao8</item>
+    </array>
+
+    <array name="yumen">
+        <item>@drawable/yumen1</item>
+        <item>@drawable/yumen2</item>
+        <item>@drawable/yumen3</item>
+        <item>@drawable/yumen4</item>
+        <item>@drawable/yumen5</item>
+        <item>@drawable/yumen6</item>
+    </array>
+    <array name="chongdian">
+        <item>@drawable/chongdian1</item>
+        <item>@drawable/chongdian2</item>
+        <item>@drawable/chongdian3</item>
+        <item>@drawable/chongdian4</item>
+        <item>@drawable/chongdian5</item>
+        <item>@drawable/chongdian6</item>
+    </array>
+
+
     <string-array name="lists">
         <item>1s</item>
         <item>2s</item>

@@ -2,6 +2,7 @@ package com.brick.robotctrl;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.TypedArray;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -9,6 +10,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.ant.liao.FrameAnimation;
 import com.ant.liao.GifView;
 import com.facebook.drawee.view.SimpleDraweeView;
 
@@ -22,8 +24,11 @@ public class ExpressionActivity extends BaseActivity  {
 	private GestureDetector mGestureDetector;
 	private int screenWidth;
 	private int screenHeight;
-	public static ImageView igv;
+	public static ImageView imgv;
 	public static SimpleDraweeView f;
+	public static FrameAnimation frameAnimation ;
+	public static int [] arrjpg2 = { R.array.duzui0,R.array.duzui,R.array.superise,R.array.huachi,R.array.kelian,
+			R.array.keai,R.array.cry,R.array.tiaoqi,R.array.weiqu,R.array.weixiao,R.array.yumen,R.array.chongdian};
 
 
 	enum EXPRESSION{
@@ -88,13 +93,12 @@ public class ExpressionActivity extends BaseActivity  {
 		index = intent.getIntExtra("index",1);
 		 Log.i("express","........<...>........"+index);
 		  //  userTimer = new UserTimer();
-           //  igv =  (ImageView) findViewById(R.id.igv);
+          imgv =  (ImageView) findViewById(R.id.imgv);
 
 		//暂时注释
-		gifView = (GifView) findViewById(R.id.gif2);
-		gifView.setGifImageType(GifView.GifImageType.COVER);
+		/*gifView = (GifView) findViewById(R.id.gif2);
+		gifView.setGifImageType(GifView.GifImageType.COVER);*/
 
-		   // 	gifView.setOnClickListener(this);
 		//屏幕适配;
 //     gifView.setShowDimension(screenWidth, screenHeight);
 
@@ -136,25 +140,45 @@ public class ExpressionActivity extends BaseActivity  {
 	public static void changeExpression(int index) {
 		Log.d(TAG, "changeExpression: current expression:" + currentIndex + "\tset expression:" + index);
 		if ( currentIndex != index ) {
-			if (index > EXPRESSION.getExpressionSize()-2) {
-				//如果表情角标大于表情枚举个数，从0开始一次递增显示表情
-		    	index = index -(EXPRESSION.getExpressionSize()-1);
-		    	Log.d(TAG, EXPRESSION.getExpressionSize()+"changeExpression 大于枚举长度: ..... " + index);
-		     }
+			if (index > arrjpg2.length-1) {
+				//如果表情角标大于表情枚举个数，从1开始一次递增显示表情
+				index = index -(arrjpg2.length)+1;
+				Log.d(TAG, "changeExpression 大于枚举长度: ..... " + index);
+			}
 			System.gc();//垃圾回收机制
-
-			gifView.setGifImage(EXPRESSION.getExpression(index).id);
-			gifView.showAnimation();
-
+			/*gifView.setGifImage(EXPRESSION.getExpression(index).id);
+			gifView.showAnimation();*/
 			//Glide.with(RobotApplication.getAppContext()).load(EXPRESSION.getExpression(index).id).asGif().skipMemoryCache(false).priority(Priority.IMMEDIATE).diskCacheStrategy(DiskCacheStrategy.SOURCE).into(igv);
-		     currentIndex = index;
+		    currentIndex = index;
+
+			animiantor(index);
+
 			Log.d(TAG, "changeExpression: ..... " + index);
 		}else {
 		  Log.d(TAG, "changeExpression等于当前表情编号: ..... " + index);
 
 		}
 	}
-
+	private static void animiantor(int index) {
+		if ( frameAnimation != null){
+			frameAnimation.release();
+			frameAnimation =null;
+		}
+		frameAnimation = new FrameAnimation(imgv, getRes(index), 400, true);
+	}
+	/**
+	 * 获取需要播放的动画资源
+	 */
+	public static int[] getRes(int index) {
+		TypedArray typedArray =RobotApplication.getAppContext().getResources().obtainTypedArray(arrjpg2[index]);
+		int len = typedArray.length();
+		int[] resId = new int[len];
+		for (int i = 0; i < len; i++) {
+			resId[i] = typedArray.getResourceId(i, -1);
+		}
+		typedArray.recycle();
+		return resId;
+	}
 
 	public void onClick(View v) {
 		//clearTimerCount();

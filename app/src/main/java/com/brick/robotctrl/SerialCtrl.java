@@ -117,26 +117,25 @@ public class SerialCtrl {
 
         @Override
         protected void getBettryVoltReceived(String[] battery) {
-            for(int i = 0 ;i<battery.length;i++){
+          /*  for(int i = 0 ;i<battery.length;i++){
                 Log.d(TAG, battery.length+"onDataReceived  字符串.3. : " + battery[i]);
-            }//BB30CC00
+            }*///BB30CC00
             if (battery.length!=4){
                 //防止读取到的数据长度有误导致程序崩溃;
                 return;
             }
-
-            String volt =battery[0];  //电压标志位
-            if(volt.equals("CC")){
-                String finalVolt = battery[1];//电压值
+            String volt =battery[2];  //电压标志位
+            if(volt.equals("DD")){
+                String finalVolt = battery[3];//电压值
                 batteryNum = Integer.parseInt(finalVolt,16);
                 Log.d(TAG, "onDataReceived 电压百分比: "+batteryNum);
             }else {
                 return;
             }
             //充电状态
-            String state = battery[3];
+            String state = battery[1];
             if(state.equals("DD")){
-                Log.d(TAG, "ReceiveBattery state  : "+ battery[4]);
+                Log.d(TAG, "ReceiveBattery state  : "+ battery[2]);
             }else {
                 return;
             }
@@ -269,7 +268,6 @@ public class SerialCtrl {
                // sendPortData(ComA, "55AA7E0004020300860D");//发卡机初始化
                 sendPortData(ComA, "55AA7E0001021200920D");
 
-
                 break;
             case "headleft":
               // sendPortData(ComA, "FF13FF13");
@@ -300,8 +298,9 @@ public class SerialCtrl {
         return batteryNum;
     }
 
+    /*发送回充电的命令*/
     public void robotCharge(){
-        sendPortData(ComA, "FF20FF20");
+        sendPortData(ComA, "55AA7E0001021800980D");
     }
 
 //    //----------------------------------------------------显示接收数据

@@ -2,8 +2,6 @@ package com.brick.robotctrl;
 
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.TypedArray;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -24,16 +23,13 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ant.liao.GifView;
+import com.ant.liao.FrameAnimation;
 import com.jly.batteryView.BatteryView;
 import com.kjn.videoview.ADVideo;
-import com.rg2.activity.ShellUtils;
 import com.rg2.utils.LogUtil;
 import com.rg2.utils.WifiAdmin;
 
@@ -41,12 +37,14 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import it.sauronsoftware.base64.Base64;
 
@@ -79,50 +77,14 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
     private netWorkChangeReceiver netWorkChangeReceiver;
    // public NetworkConnectChangedReceiver mNetworkConnectChangedReceiver;
    // public ETHERNETConnectChangedReceiver mETHERNETConnectChangedReceiver;
-    public boolean isConnected;
-    public boolean iseth0;
-    private Button                printButton, mSettingBtn;
-
-    private Dialog mNoticeDialog;
-   // private Timer timer = new Timer(true);
-    TimerTask mSettingTask = new TimerTask(){
-        @Override
-        public void run()
-        {
-            String fingerprint = "cat /sys/class/gpio/gpio34/value";
-            List<String> commands = new ArrayList<String>();
-            commands.add(fingerprint);
-            ShellUtils.CommandResult result = ShellUtils.execCommand(commands, false, true);
-            LogUtil.e("TAG", "result-->" + result.result);
-        }
-    };
-
-    private ImageView mivglobal;
-
-
-    private TextView mtvBback;
-    private Button btnMoney;
-    private Button btntest;
-    private ProgressDialog pd;
-    private GifView gif;
 
     //无线网工具类
     public WifiAdmin wifiAdmin;
-  //  private shellThread shellthread;
-  /*  private String[] shell = new String[]{
-            "ip ru flush",
-            "ip ru add to 192.168.100.0/24 lookup eth0" ,
-            "ip ru add to 10.0.0.0/8 lookup wlan0",
-            "ip ru add to 132.0.0.0/8 lookup wlan0",
-            "ip ru add to 172.0.0.0/8 lookup wlan0",
-            "ip ru add to 192.0.0.0/8 lookup wlan0",
-            "ip ru add to all lookup eth0"};*/
 
-
-    public WebView webView;
     public Timer timer;
     public int numstop;
-
+    private ImageView  Img_jpg;
+    public FrameAnimation frameAnimation;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -131,18 +93,22 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        // updatePresentation();//在BaseActivity中调用
-       // Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        // remove text in toolbar
-       // toolbar.setTitle("");
-       // setSupportActionBar(toolbar);
-      gif = (GifView) findViewById(R.id.gif);
-      gif.setGifImage(R.drawable.weixiao);
 
+        Img_jpg = (ImageView) findViewById(R.id.img_jpg);
 
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+               Thread t = Executors.defaultThreadFactory().newThread(r);
+               t.setDaemon(true);
+              // Log.i(TAG, "onSharedPreferenceChanged:1   " +t.getName());
+                return t;
+            }
+        });
+        executor.execute(runAnimation);
         ssdbTask = new SSDBTask(MainActivity.this, handler);  //ttymxc0
        // serialCtrl = new SerialCtrl(MainActivity.this, handler, "ttymxc0", 9600, "robotctrl");
-     //暂时屏蔽
+       //暂时屏蔽
         serialCtrl = new SerialCtrl(MainActivity.this, handler, "ttyS3", 9600, "robotctrl");
          //打印机
        // serialCtrlPrinter = new SerialCtrl(MainActivity.this, handler, "ttyUSB1", 9600, "printer");
@@ -153,31 +119,44 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
         //创建NetWorkChangeReceiver的实例，并调用registerReceiver()方法进行注册
         registerReceiver(netWorkChangeReceiver, intentFilter);
 
-          //无线网监听
-//        mNetworkConnectChangedReceiver = new NetworkConnectChangedReceiver();
-//        IntentFilter filter = new IntentFilter();
-//        filter.addAction("android.NET.conn.CONNECTIVITY_CHANGE");
-//        filter.addAction("android.Net.wifi.WIFI_STATE_CHANGED");
-//        filter.addAction("android.net.wifi.STATE_CHANGE");
-//        registerReceiver(mNetworkConnectChangedReceiver, filter);
-
-          //以太网监听
-//        mETHERNETConnectChangedReceiver = new ETHERNETConnectChangedReceiver();
-//        IntentFilter filter2 = new IntentFilter();
-//        filter2.addAction("android.NET.conn.CONNECTIVITY_CHANGE "); //网络连接消息
-//        filter2.addAction("android.net.ethernet.ETHERNET_STATE_CHANGED"); //以太网消息
-//        filter2.addAction("android.net.ethernet.STATE_CHANGE");
-//        this.registerReceiver(mETHERNETConnectChangedReceiver, filter2);
-
         initData();
        // initChangeListener();
-
-       timer = new Timer(true);
-         //改指令执行后延时1000ms后执行run，之后每1000ms执行�?次run
-        timer.schedule(queryTask, 200, 200);
-        //   timer.cancel(); //结束Timer所有的计时器;
+         //改指令执行后延时ms后执行run，之后每ms执行�?次run
+       /*  timer = new Timer(true);
+         timer.schedule(queryTask, 200, 200);*/
+        executor.scheduleWithFixedDelay(queryTask, 300, 300, TimeUnit.MILLISECONDS);
+        // timer.cancel(); //结束Timer所有的计时器;
         initHandler();
      }
+     Runnable runAnimation = new Runnable() {
+           @Override
+           public void run() {
+             runOnUiThread(new Runnable() {
+                 @Override
+                 public void run() {
+                     animiantor();
+                 }
+             });
+           }
+        };
+    public void animiantor(){
+        if (frameAnimation != null){
+            frameAnimation.release();
+            frameAnimation = null;
+        }
+        frameAnimation = new FrameAnimation(Img_jpg, getRes(), 400, true);
+    }
+    public  int[] getRes() {
+        TypedArray typedArray = getResources().obtainTypedArray(R.array.weixiao);
+        int len = typedArray.length();
+        int[] resId = new int[len];
+        for (int i = 0; i < len; i++) {
+            resId[i] = typedArray.getResourceId(i, -1);
+        }
+        typedArray.recycle();
+        return resId;
+    }
+
     //初始化控件;
      public void initData() {
      //屏幕的点击事件
@@ -255,8 +234,6 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
     private void initHandler() {
          ADActivity.setHandler(handler);
        // AboutActivity.setHandler(handler);
-        //Presentation
-    // VideoPresentation.setHandler(handler);
     }
 
 
@@ -289,11 +266,10 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
     private String strTimeFormat         = null;
     private String disableAudio          = "No";
 
-    TimerTask queryTask = new TimerTask()
+    Runnable queryTask = new Runnable()
     {
         @Override
-        public void run()
-        {
+        public void run(){
             Log.d(TAG, "run: stop 1: " + ssdbTask.stop);
             if (!ssdbTask.stop)
             {                  // 发起读请�?
@@ -313,46 +289,8 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                     }
                 }
             }
-/*
-            if (countForAlive++ > 5 * 1000 / 200)
-            {//显示时间
-                currentTime = Calendar.getInstance();
-                strTimeFormat = android.provider.Settings.System.getString(getContentResolver(), android.provider.Settings.System.TIME_12_24);
-                if ((strTimeFormat == null) || (strTimeFormat.equals("")) || strTimeFormat.equals("12"))
-                {     // 12HOUR
-                    if (Calendar.getInstance().get(Calendar.AM_PM) == Calendar.AM) {      // AM
-                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_CurrentTime], String.valueOf(currentTime.get(Calendar.HOUR)) +
-                                ":" + String.valueOf(currentTime.get(Calendar.MINUTE)) + ":" + String.valueOf(currentTime.get(Calendar.SECOND)));
-                    } else {    // PM
-                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_CurrentTime], String.valueOf(currentTime.get(Calendar.HOUR) + 12) +
-                                ":" + String.valueOf(currentTime.get(Calendar.MINUTE)) + ":" + String.valueOf(currentTime.get(Calendar.SECOND)));
-                    }
-                } else {        // 24HOUR
-                    ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_CurrentTime], String.valueOf(currentTime.get(Calendar.HOUR)) +
-                            ":" + String.valueOf(currentTime.get(Calendar.MINUTE)) + ":" + String.valueOf(currentTime.get(Calendar.SECOND)));
-                }
-                countForAlive = 0;
-            }
-*/
 
-  /*          ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);//获得运行activity
-            ComponentName cn = am.getRunningTasks(1).get(0).topActivity;//得到某一活动
-
-            if (cn.getClassName().equals("com.brick.robotctrl.ADActivity")) {
-                if (disableAudio.equals("No")){
-                    disableAudio = "Yes";
-                    ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DisableAudio], disableAudio);
-
-                }
-             } else {
-                if (disableAudio.equals("Yes"))
-                {
-                    disableAudio = "No";
-                    ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DisableAudio], disableAudio);
-                }
-            }
-            addTimerCount();*/
-        }
+      }
     };
 
     public static String Base64Decode(String base64EncodedData) {
@@ -408,6 +346,7 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                         Log.d(TAG, "handleMessage: ----------10-3------- Key:Event \tvalue:" + rlt);
                         //SSDBTask.enableCharge = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
+                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
                         //充电
                         serialCtrl.robotCharge();
                         Log.d(TAG, "handleMessage: clear Event");
@@ -466,7 +405,7 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                     if (rlt.equals("BatteryVolt"))
                     {
                         Log.d(TAG, "handleMessage: ----------10-11------- Key:Event \tvalue:" + rlt);
-                        SSDBTask.enableBatteryVolt = true;
+                       // SSDBTask.enableBatteryVolt = true;
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         //自定义数据发送电量到pc端;
                         int finalVolt = serialCtrl.getBattery();
@@ -518,8 +457,9 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         Log.d(TAG, "handleMessage: clear Event");
                         Log.d(TAG, "restart: " + "重启机器人" );
-                         serialCtrl.sendPortData(serialCtrl.ComA,  "55AA7E0001021700970D");
                         try {
+                            Thread.sleep(100);
+                         serialCtrl.sendPortData(serialCtrl.ComA,  "55AA7E0001021700970D");
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -734,8 +674,8 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                      if(rlt.equals("stop")||rlt.equals("headmid")) {
                             numstop++;
                       if(numstop >= 5){
-                      Log.d(TAG, "handleMessage: ---------numstop---------Key:SetParam \tvalue:numstop = " + numstop);
-                      ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
+                        Log.d(TAG, "handleMessage: ---------numstop---------Key:SetParam \tvalue:numstop = " + numstop);
+                        ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
                          numstop = 0;
                          }
                       }
@@ -1099,88 +1039,6 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
     }
 
 
-    /*无线网络的监听
-   * */
-  /*  class NetworkConnectChangedReceiver extends BroadcastReceiver{
-        public static final  String TAG1 = "TAG1";
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())){
-                Parcelable parcelableExtra = intent
-                        .getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-                if (null != parcelableExtra)
-                {
-                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
-                    NetworkInfo.State state = networkInfo.getState();
-                    // 当然，这边可以更精确的确定状态
-                    isConnected = state == NetworkInfo.State.CONNECTED;
-                    Log.e(TAG1, "isConnected    " + isConnected);
-                    String ip = getIp2();
-                    if (isConnected && !ip.isEmpty()  )//无线连接 以太不为空
-                    {
-                       *//* mRunBtn.setEnabled(true);
-                        mRunBtn.setText("TRUE");*//*
-                        Log.e("TAG", "无线网 以太 可用。isConnected。。。");
-                        // APP.getInstance().setWifi(true);
-                        if (shellthread == null){
-                            shellthread = new shellThread();
-                            shellthread.start();
-                        }
-
-                        //注销广播
-                        context.unregisterReceiver(mNetworkConnectChangedReceiver);
-                    }
-                    else
-                    {
-                        // APP.getInstance().setWifi(false);
-                       *//* mRunBtn.setEnabled(false);
-                        mRunBtn.setText("false");*//*
-                    }
-                }
-            }
-        }
-    }*/
-    /*以太网监听
-   * */
-/*    private class ETHERNETConnectChangedReceiver extends BroadcastReceiver {
-        private final String  TAG = "以太网";
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            iseth0 = isETHERNET(context);
-            String ip = getIp2();
-            Log.e("TAG1以太网 ip。isConnected。。。", " "+ip);
-            Log.e("TAG1", "isConnected   此时以太网  " + iseth0);
-            Log.e("TAG1", "isConnected   此时无线为 " +isConnected );
-            if(isConnected && !ip.isEmpty()  ){
-               *//* mRunBtn.setEnabled(true);
-                mRunBtn.setText("TRUE");*//*
-                Log.e("TAG1", "以太网 无线 可用。isConnected。。。");
-
-                if (shellthread == null){
-                    shellthread = new shellThread();
-                    shellthread.start();
-                }
-
-               // unregisterReceiver(mETHERNETConnectChangedReceiver);
-            }else {
-              *//*  mRunBtn.setEnabled(false);
-                mRunBtn.setText("false");*//*
-                Log.e("TAG1", "以太网 或无线 不可用。isConnected。。。");
-            }
-
-           *//*-------------------------------------------*//*
-            ConnectivityManager connectivityManager = (ConnectivityManager) context
-                    .getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
-
-            Log.e("以太网 无线 可用。isConnected。。。", " "+ip);
-            if (activeNetInfo != null ){
-                int type = activeNetInfo.getType();
-                Log.e("以太网 无线 可用。isConnected。。。", " "+type);
-            }
-        }
-
-    }*/
 
     /*判断wifi 是否连接
     * */
@@ -1236,26 +1094,5 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
         }
         return "";
     }
-
-/*    public class shellThread extends Thread {
-        @Override
-        public void run() {
-            ShellUtil.CommandResult r= ShellUtil.execCommand(shell,true,true);
-
-            if(null !=r)
-            {
-                Log.e("TAG", "11111----->" + r.errorMsg);
-                Log.e("TAG", "22222----->" + r.responseMsg);
-                Log.e("TAG", "333333----->" + r.result);
-                if (shellthread != null){
-                    // shellthread.stop();
-                    Log.e("TAG", "222222222222222222222222222222.."+shellthread);
-                }
-            } else
-            {
-                Log.e("TAG", "222222222222222222222222222222");
-            }
-        }
-    }*/
 
 }
