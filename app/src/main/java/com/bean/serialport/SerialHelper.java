@@ -35,7 +35,8 @@ public abstract class  SerialHelper{
 	}
 	public SerialHelper(){
 		//this("/dev/s3c2410_serial0",9600);
-		this("/dev/s3c2410_serial3",9600);
+	   this("/dev/s3c2410_serial3",9600);
+		// this("/dev/ttyS3",9600);
 	}
 	public SerialHelper(String sPort){
 		this(sPort,9600);
@@ -69,7 +70,9 @@ public abstract class  SerialHelper{
 	public void send(byte[] bOutArray){
 		try
 		{
+			//mOutputStream.flush();
 			mOutputStream.write(bOutArray);
+			mOutputStream.flush();
 			Log.d("mOutputStream : ","send : "+bOutArray);
 
 		} catch (IOException e)
@@ -108,7 +111,7 @@ public abstract class  SerialHelper{
 					}
 					//判断拼接的字符串对象
 					if (sb == null){
-					  sb =new StringBuilder();
+					  sb =new StringBuilder("");
 					}
 					int size = mInputStream.read(buffer);
                           sleep(100);
@@ -123,7 +126,6 @@ public abstract class  SerialHelper{
 					byteArrayOutputStream.write(buffer,0,size);
 					String Serial = SerialFunc.ByteArrToHex(byteArrayOutputStream.toByteArray());
 					Log.d(TAG,"onDataReceived .Serial 1:" + Serial + " 长度 "+Serial.length());
-
 					if(size<2){
 						sb.append(Serial);
 						Log.d(TAG,"onDataReceived .Serial 2:" + sb + " 长度 "+sb.length());

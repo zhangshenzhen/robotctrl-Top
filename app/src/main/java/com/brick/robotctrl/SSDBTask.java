@@ -33,7 +33,7 @@ public class SSDBTask {
     // public String serverIp = "120.25.66.79";
     public String serverIp = "222.190.128.98";
     public int serverPort = 20177;
-    public String robotName = "hs22";
+    public String robotName = "hs23";
     public String robotLocation = "江苏红石信息集成服务有限公司";
     public String videoPlayList = null;
     private final int serverSite = 222;
@@ -43,12 +43,10 @@ public class SSDBTask {
         if (!TextUtils.isEmpty(robotName))
             this.robotName = robotName;
     }
-
     public void setRobotLocation(@NonNull String robotLocation) {
         if (!TextUtils.isEmpty(robotName))
             this.robotLocation = robotLocation;
     }
-
     public void setServerPort(int serverPort) {
         if (serverPort > 0 && serverPort < 65536) {
             this.serverPort = serverPort;
@@ -298,7 +296,7 @@ public class SSDBTask {
                     case ACTION_HSET://4
                         try {
 //                       ssdbClient = new SSDB(serverIp, serverPort);
-                            ssdbClient.hset(robotName, cmd.key, cmd.val);
+                         ssdbClient.hset(robotName, cmd.key, cmd.val);
                         } catch (Exception e) {
                             e.printStackTrace();
                             SSDBQuery(ACTION_CONNECT);

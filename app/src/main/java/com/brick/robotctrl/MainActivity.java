@@ -127,13 +127,17 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
         executor.scheduleWithFixedDelay(queryTask, 300, 300, TimeUnit.MILLISECONDS);
         // timer.cancel(); //结束Timer所有的计时器;
         initHandler();
-     }
+    }
      Runnable runAnimation = new Runnable() {
            @Override
            public void run() {
-             runOnUiThread(new Runnable() {
+               Log.d(TAG,  Thread.currentThread()+ "runAnimation out: " );
+
+               runOnUiThread(new Runnable() {
                  @Override
                  public void run() {
+                     Log.d(TAG,  Thread.currentThread()+ "runAnimation in: " );
+
                      animiantor();
                  }
              });
@@ -348,7 +352,7 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_DirCtrl], "");
                         //充电
-                        serialCtrl.robotCharge();
+                        serialCtrl.robotOrder("Charge");
                         Log.d(TAG, "handleMessage: clear Event");
                     }
                     if (rlt.equals("setparam"))
@@ -456,10 +460,10 @@ public class MainActivity extends com.brick.robotctrl.BaseActivity{
                         Log.d(TAG, "handleMessage: ----------10-16------- Key:Event \tvalue:" + rlt);
                         ssdbTask.SSDBQuery(SSDBTask.ACTION_HSET, SSDBTask.event[SSDBTask.Key_Event], "");
                         Log.d(TAG, "handleMessage: clear Event");
-                        Log.d(TAG, "restart: " + "重启机器人" );
+                        Log.d(TAG, "restart: " + "restart" );
                         try {
-                            Thread.sleep(100);
-                         serialCtrl.sendPortData(serialCtrl.ComA,  "55AA7E0001021700970D");
+                           //serialCtrl.sendPortData(serialCtrl.ComA,  "55AA7E0001021700970D");
+                            serialCtrl.robotOrder("reboot");
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();

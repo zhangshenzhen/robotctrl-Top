@@ -217,8 +217,8 @@ public class SerialCtrl {
         });
     }
 
-      public  SerialCtrl serialCtrl2;
-// relative robot
+  public  SerialCtrl serialCtrl2;
+  // relative robot
     public void robotMove(String dir) {
         Log.d(TAG, "robotMove: "+dir);
         if (serialCtrl2 ==null){
@@ -298,10 +298,17 @@ public class SerialCtrl {
         return batteryNum;
     }
 
-    /*发送回充电的命令*/
-    public void robotCharge(){
-        sendPortData(ComA, "55AA7E0001021800980D");
-    }
+      /*发送其他的命令*/
+    public void robotOrder(String order){
+        if (serialCtrl2 ==null){
+            serialCtrl2 = new SerialCtrl(context , contextHandler , "ttyS1", 9600, "robotctrl");
+        }
+        if(order.equals("Charge")){//回充
+          serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001021800980D");
+        }else if (order.equals("reboot")){//重启
+          serialCtrl2.sendPortData(serialCtrl2.ComA, "55AA7E0001021700970D");
+        }
+     }
 
 //    //----------------------------------------------------显示接收数据
 //    public void DispRecData(ComBean ComRecData){
